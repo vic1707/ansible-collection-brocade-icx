@@ -1,0 +1,20 @@
+---
+profile: production
+strict: true
+
+enable_list:
+  - empty-string-compare
+  - galaxy-version-incorrect
+  - loop-var-prefix
+  - name[prefix]
+  - no-log-password
+  - no-prompting
+  - no-same-owner
+
+skip_list:
+  - fqcn[deep]
+
+exclude_paths:
+  - .ansible
+  - .config
+  - .github

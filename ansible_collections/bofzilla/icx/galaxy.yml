@@ -1,0 +1,17 @@
+---
+namespace: bofzilla
+name: icx
+version: 1.0.0
+readme: README.md
+authors:
+  - bofzilla
+description: An unofficial collection for Brocade ICX switches
+license:
+  - GPL-2.0-or-later
+tags: [brocade, icx, networking, switch]
+dependencies: {}
+repository: https://github.com/vic1707/ansible-collection-brocade-ixc
+documentation: https://github.com/vic1707/ansible-collection-brocade-ixc
+homepage: https://github.com/vic1707/ansible-collection-brocade-ixc
+issues: https://github.com/vic1707/ansible-collection-brocade-ixc/issues
+build_ignore: []

@@ -1,0 +1,30 @@
+redactions = ["ICX_ENABLE_PASSWORD"]
+
+[env]
+_.path = "{{ env.PATH }}:{{ config_root }}/bin"
+_.python.venv = { path = ".venv", create = true }
+
+[task_config]
+dir = "{{ config_root }}"
+includes = [".config/tasks.mise.toml"]
+
+[tools]
+actionlint = "1.7.12"
+jq = "1.8.1"
+python = "3.14.5"
+typos = "1.47.0"
+uv = "0.11.17"
+zizmor = "1.25.2"
+
+[plugins]
+zizmor = "asdf:vic1707/asdf-zizmor"
+
+[hooks]
+postinstall = "uv sync"
+
+[settings.python]
+compile = false
+uv_venv_auto = true
+
+[settings]
+experimental = true

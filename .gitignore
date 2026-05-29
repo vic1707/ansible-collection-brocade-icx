@@ -1,0 +1,9 @@
+.git/
+.ansible/
+.venv/
+__pycache__/
+.ruff_cache/
+
+ansible_collections/bofzilla/icx/tests/output/
+ansible_collections/bofzilla/icx/tests/integration/inventory
+ansible_collections/bofzilla/icx/tests/integration/integration_config.yml

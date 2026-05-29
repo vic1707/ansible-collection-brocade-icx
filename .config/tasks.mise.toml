@@ -1,0 +1,45 @@
+actionlint = "actionlint"
+ansible-lint = "ansible-lint -c .config/.ansible-lint.yml"
+"ansible-lint:fix" = "ansible-lint -c .config/.ansible-lint.yml --fix"
+"ruff:lint" = "ruff check"
+"ruff:lint:fix" = "ruff check --fix --unsafe-fixes"
+"ruff:format" = "ruff format --check"
+"ruff:format:fix" = "ruff format"
+typos = "typos -c .config/.typos.toml"
+ty = "ty check"
+zizmor = "zizmor ."
+
+clean = """
+rm -fr .ruff_cache .ansible .pytest_cache
+find ansible_collections/bofzilla/icx \
+	-type d -name '__pycache__' -o -path '*/tests/output' \
+	| xargs rm -rf
+"""
+
+[format]
+depends = ["ruff:format"]
+
+["format:fix"]
+depends = ["ruff:format:fix"]
+
+[ci-lint]
+depends = ["actionlint", "zizmor"]
+
+[lint]
+depends = ["ansible-lint", "ty", "typos", "ruff:lint"]
+
+["lint:fix"]
+depends = ["ansible-lint:fix", "ty", "ruff:lint:fix"]
+
+[unit-tests]
+depends = ["clean"]
+dir = "{{ config_root }}/ansible_collections/bofzilla/icx"
+run = "ansible-test units --coverage --python-interpreter $(which python)"
+
+[tests]
+depends = ["unit-tests"]
+
+[tests-coverage]
+depends = ["tests"]
+dir = "{{ config_root }}/ansible_collections/bofzilla/icx"
+run = "ansible-test coverage html"
