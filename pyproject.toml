@@ -6,6 +6,13 @@ dependencies = [
 	"ansible==13.7.0",
 	"ansible-lint==26.4.0",
 	"coverage==7.14.1",
+	# paramiko 5.0.0 (2026-05-09) dropped both:
+	#   - SHA-1 DH KEX (diffie-hellman-group1-sha1, needed by ICX)
+	#   - ssh-rsa host key algorithm (also needed by ICX)
+	# https://www.paramiko.org/changelog.html
+	# commit a448945 (Remove SHA1 support from RSA key handling)
+	"paramiko==4.0.0",
+	"pyserial==3.5",
 	"pydantic==2.13.4",
 	"pytest==9.0.3",
 	"pytest-xdist==3.8.0",
