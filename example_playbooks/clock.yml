@@ -1,0 +1,13 @@
+---
+- name: Gather Brocade ICX switch clock
+  hosts: "{{ target_hosts | default('sw_uart') }}"
+  gather_facts: false
+
+  tasks:
+    - name: Retrieve clock
+      bofzilla.icx.show.clock:
+      register: clock
+
+    - name: Show parsed clock
+      ansible.builtin.debug:
+        var: clock

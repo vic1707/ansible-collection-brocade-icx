@@ -3,6 +3,9 @@ redactions = ["ICX_ENABLE_PASSWORD"]
 [env]
 _.path = "{{ env.PATH }}:{{ config_root }}/bin"
 _.python.venv = { path = ".venv", create = true }
+ANSIBLE_INVENTORY = "{{ config_root }}/.config/inventory.yml"
+ANSIBLE_COLLECTIONS_PATH = "{{ config_root }}/ansible_collections"
+ANSIBLE_NETWORK_CLI_SSH_TYPE = "paramiko" # TODO: switch to `ansible-pylibssh` when prebuilt wheel exist - remove line
 
 [task_config]
 dir = "{{ config_root }}"

@@ -1,0 +1,14 @@
+---
+params:
+  time: "not-a-date"
+  timezone: "gmt+00"
+  save: false
+
+output: ""
+
+error: >-
+  ValidationError: 1 validation error for SetClock
+
+  time
+    Input should be a valid datetime or date, invalid character in year [type=datetime_from_date_parsing, input_value='not-a-date', input_type=str]
+      For further information visit https://errors.pydantic.dev/2.13/v/datetime_from_date_parsing

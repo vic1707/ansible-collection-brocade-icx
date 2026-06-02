@@ -1,0 +1,21 @@
+---
+all:
+  hosts:
+    sw_ssh:
+      ansible_connection: ansible.netcommon.network_cli
+      ansible_network_os: bofzilla.icx.icx
+      ansible_host: 192.168.1.105
+      ansible_user: admin
+      ansible_password: dummy
+      ansible_ssh_common_args: >-
+        -o KexAlgorithms=diffie-hellman-group1-sha1
+        -o HostKeyAlgorithms=ssh-rsa
+        -o PubkeyAcceptedAlgorithms=ssh-rsa
+
+    sw_uart:
+      ansible_connection: bofzilla.icx.serial
+      ansible_network_os: bofzilla.icx.icx
+      ansible_serial_port: /dev/cu.usbserial-A9A2C0QQ
+      ansible_serial_baud: 9600
+      ansible_user: admin
+      ansible_password: dummy
