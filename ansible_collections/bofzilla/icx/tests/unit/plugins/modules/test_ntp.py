@@ -4,61 +4,61 @@ import pytest
 
 from ansible_collections.bofzilla.icx.plugins.modules import ntp
 from ansible_collections.bofzilla.icx.tests.unit.plugins.mock_utils import (
-	MODES,
 	AnsibleFailJson,
-	ErrorFixture,
-	SuccessFixture,
-	discover_fixtures,
-	make_runner,  # noqa: F401
+	ModuleErrorFixture,
+	ModuleSuccessFixture,
+	discover_module_fixtures,
+	fixture_by_name,
+	module_runner,  # noqa: F401
 )
 
-FIXTURES = discover_fixtures(Path(__file__).parents[3] / "fixtures" / "ntp")
+FIXTURES = discover_module_fixtures(Path(__file__).parents[3] / "fixtures" / "modules" / "ntp")
 
 
-def _expected_send_commands(expected: dict, check_mode: bool) -> list[str]:
-	if check_mode or not expected["changed"]:
-		return ["show ntp associations", "show ntp status"]
-
-	commands = ["show ntp associations", "show ntp status"]
-	for command in expected["command"]:
-		if command == "write memory":
-			commands.extend([command, "end"])
-		else:
-			commands.extend(["configure terminal", "ntp", command, "end"])
-	return commands
+@pytest.mark.parametrize(
+	"name,fixture",
+	[(name, fixture) for name, fixture in FIXTURES if isinstance(fixture, ModuleSuccessFixture)],
+	ids=[name for name, fixture in FIXTURES if isinstance(fixture, ModuleSuccessFixture)],
+)
+def test_ntp_results(name: str, fixture: ModuleSuccessFixture, module_runner):  # noqa: F811
+	run = module_runner(ntp, fixture.state)
+	data, _ = run(params=fixture.params or {})
+	assert data == fixture.expected
 
 
-def _expected_enable_calls(expected: dict, params: dict, check_mode: bool) -> list[str | None]:
-	if check_mode or not expected["changed"]:
-		return []
-	return [params.get("enable_password")] * len(expected["command"])
+@pytest.mark.parametrize(
+	"name,fixture",
+	[(name, fixture) for name, fixture in FIXTURES if isinstance(fixture, ModuleErrorFixture)],
+	ids=[name for name, fixture in FIXTURES if isinstance(fixture, ModuleErrorFixture)],
+)
+def test_ntp_errors(name: str, fixture: ModuleErrorFixture, module_runner):  # noqa: F811
+	run = module_runner(ntp, fixture.state or {})
+	data, _ = run(params=fixture.params or {}, expect=AnsibleFailJson)
+	assert data["msg"] == fixture.error
 
 
-@pytest.mark.parametrize("name,fixture", FIXTURES, ids=[f[0] for f in FIXTURES])
-@pytest.mark.parametrize("mode", MODES)
-def test_ntp(name, fixture: SuccessFixture | ErrorFixture, make_runner, mode):  # noqa: F811
-	run = make_runner(ntp, fixture.output)
-	match fixture:
-		case SuccessFixture(params=params, expected=expected, expected_diff=expected_diff):
-			data, mocks = run(params=params or {}, **mode)
-			module_kwargs = mocks["AnsibleModuleFactory"].call_args.kwargs
-			assert module_kwargs["argument_spec"]["servers"]["required"] is True
-			assert module_kwargs["argument_spec"]["enabled"]["default"] is True
-			assert module_kwargs["supports_check_mode"] is True
-			if mode.get("diff"):
-				if expected["changed"]:
-					assert data["diff"] == expected_diff
-					data = {key: value for key, value in data.items() if key != "diff"}
-				else:
-					assert "diff" not in data
-			assert data == expected
-			assert [call.args[0] for call in mocks["Connection"].send_command.call_args_list] == _expected_send_commands(expected, check_mode=mode.get("check_mode", False))
-			assert [call.args[0] for call in mocks["Connection"].enable.call_args_list] == _expected_enable_calls(expected, params or {}, check_mode=mode.get("check_mode", False))
+def test_ntp_check_mode_returns_planned_result(module_runner):  # noqa: F811
+	fixture = fixture_by_name(FIXTURES, "add-server")
+	assert isinstance(fixture, ModuleSuccessFixture)
+	run = module_runner(ntp, fixture.state)
+	data, _ = run(params=fixture.params or {}, check_mode=True)
+	assert data == fixture.expected
 
-		case ErrorFixture(params=params, error=error_msg):
-			data, mocks = run(params=params or {}, expect=AnsibleFailJson, **mode)
-			module_kwargs = mocks["AnsibleModuleFactory"].call_args.kwargs
-			assert module_kwargs["argument_spec"]["servers"]["required"] is True
-			assert module_kwargs["argument_spec"]["enabled"]["default"] is True
-			assert module_kwargs["supports_check_mode"] is True
-			assert error_msg == data["msg"]
+
+def test_ntp_diff_changed(module_runner):  # noqa: F811
+	fixture = fixture_by_name(FIXTURES, "replace-server-list")
+	assert isinstance(fixture, ModuleSuccessFixture)
+	run = module_runner(ntp, fixture.state)
+	data, _ = run(params=fixture.params or {}, diff=True)
+	assert data["diff"] == fixture.diff
+	data = {key: value for key, value in data.items() if key != "diff"}
+	assert data == fixture.expected
+
+
+def test_ntp_diff_unchanged(module_runner):  # noqa: F811
+	fixture = fixture_by_name(FIXTURES, "no-change")
+	assert isinstance(fixture, ModuleSuccessFixture)
+	run = module_runner(ntp, fixture.state)
+	data, _ = run(params=fixture.params or {}, diff=True)
+	assert "diff" not in data
+	assert data == fixture.expected

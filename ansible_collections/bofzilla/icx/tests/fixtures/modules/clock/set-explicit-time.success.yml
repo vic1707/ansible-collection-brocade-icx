@@ -1,0 +1,24 @@
+---
+params:
+  time: "2026-06-03T14:30:00"
+  timezone: "gmt+00"
+  save: false
+
+state:
+  clock: "2026-06-04T00:00:00+00:00"
+
+expected:
+  changed: true
+  clock: "2026-06-03T14:30:00"
+  timezone: "gmt+00"
+  command:
+    - "clock timezone gmt gmt+00"
+    - "clock set 14:30:00 06-03-2026"
+
+diff:
+  before: |-
+    clock: 2026-06-04T00:00:00
+    timezone: gmt+00
+  after: |-
+    clock: 2026-06-03T14:30:00
+    timezone: gmt+00

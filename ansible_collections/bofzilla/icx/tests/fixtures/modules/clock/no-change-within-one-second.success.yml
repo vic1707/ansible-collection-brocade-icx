@@ -1,0 +1,14 @@
+---
+params:
+  time: "2026-06-03T14:30:00"
+  timezone: "gmt+00"
+  save: true
+
+state:
+  clock: "2026-06-03T14:30:01+00:00"
+
+expected:
+  changed: false
+  clock: "2026-06-03T14:30:00"
+  timezone: "gmt+00"
+  command: []

@@ -1,0 +1,8 @@
+---
+raw: |-
+  address            ref                clock    st    when    poll    reach    delay
+  ~    129.6.15.28     INIT            16        -     64      0        0.00
+  * synced, # selected, + candidate, - outlayer, x falseticker, ~ configured
+expected:
+  servers:
+    - "129.6.15.28"

@@ -1,0 +1,18 @@
+---
+params:
+  time: "2026-06-03T14:30:00"
+  timezone: "gmt+05:30"
+  save: true
+
+state:
+  clock: "2026-06-04T00:00:00+00:00"
+
+expected:
+  changed: true
+  clock: "2026-06-03T14:30:00"
+  timezone: "gmt+05:30"
+  saved: true
+  command:
+    - "clock timezone gmt gmt+05:30"
+    - "clock set 14:30:00 06-03-2026"
+    - "write memory"

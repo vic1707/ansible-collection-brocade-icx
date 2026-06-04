@@ -1,0 +1,8 @@
+---
+raw: |-
+  address            ref                clock    st    when    poll    reach    delay
+  *    ~    172.19.69.1     172.24.114.33     3         25    64         3         2.89
+  * synced, # selected, + candidate, - outlayer, x falseticker, ~ configured
+expected:
+  servers:
+    - "172.19.69.1"

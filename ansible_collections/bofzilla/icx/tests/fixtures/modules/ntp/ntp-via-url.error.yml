@@ -1,0 +1,11 @@
+---
+params:
+  servers:
+    - "ntp.midway.ovh"
+  save: false
+
+error: >-
+  ValidationError: 1 validation error for SetNtpServer
+
+  server
+    value is not a valid IPv4 or IPv6 address [type=ip_any_address, input_value='ntp.midway.ovh', input_type=str]

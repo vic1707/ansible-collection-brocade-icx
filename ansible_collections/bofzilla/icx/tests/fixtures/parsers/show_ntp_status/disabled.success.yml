@@ -1,0 +1,7 @@
+---
+raw: |-
+  Clock is unsynchronized, no reference clock
+  NTP server mode is enabled, NTP client mode is disabled
+  NTP master mode is disabled, NTP master stratum is 8
+expected:
+  enabled: false

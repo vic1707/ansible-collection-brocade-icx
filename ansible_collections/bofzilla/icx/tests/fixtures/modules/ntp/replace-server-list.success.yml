@@ -1,0 +1,33 @@
+---
+params:
+  servers:
+    - "129.6.15.28"
+    - "129.6.15.29"
+  enabled: true
+  save: false
+
+state:
+  associations:
+    servers:
+      - "129.6.15.28"
+      - "192.0.2.1"
+  status:
+    enabled: true
+
+expected:
+  changed: true
+  enabled: true
+  servers:
+    - "129.6.15.28"
+    - "129.6.15.29"
+  command:
+    - "no server 192.0.2.1"
+    - "server 129.6.15.29"
+
+diff:
+  before: |-
+    enabled: true
+    servers: 129.6.15.28, 192.0.2.1
+  after: |-
+    enabled: true
+    servers: 129.6.15.28, 129.6.15.29
