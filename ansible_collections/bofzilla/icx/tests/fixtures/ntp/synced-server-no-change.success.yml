@@ -1,0 +1,22 @@
+---
+params:
+  servers:
+    - "172.19.69.1"
+  enabled: true
+  enable_password: secret
+  save: true
+
+output:
+  - |-
+    address            ref                clock    st    when    poll    reach    delay
+    *    ~    172.19.69.1     172.24.114.33     3         25    64         3         2.89
+    * synced, # selected, + candidate, - outlayer, x falseticker, ~ configured
+  - |-
+    NTP server mode is enabled, NTP client mode is enabled
+
+expected:
+  changed: false
+  enabled: true
+  servers:
+    - "172.19.69.1"
+  command: []

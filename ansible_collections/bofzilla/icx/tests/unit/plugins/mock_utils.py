@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -9,10 +9,12 @@ from ansible.module_utils.connection import Connection
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
+CliOutput = str | Sequence[str]
+
 
 @dataclass(config=ConfigDict(extra="forbid"))
 class SuccessFixture:
-	output: str
+	output: CliOutput
 	expected: Any
 	params: dict[str, Any] | None = None
 	expected_diff: dict[str, str] | None = None
@@ -20,7 +22,7 @@ class SuccessFixture:
 
 @dataclass(config=ConfigDict(extra="forbid"))
 class ErrorFixture:
-	output: str
+	output: CliOutput
 	error: str
 	params: dict[str, Any] | None = None
 
@@ -71,7 +73,7 @@ def fail_json(*_, **kwargs):
 def make_runner():
 	def _make_runner(
 		py_module: Any,
-		cli_output: str,
+		cli_output: CliOutput,
 	) -> Callable[..., tuple[dict, dict[str, MagicMock]]]:
 		monkeypatch = pytest.MonkeyPatch()
 		mocks: dict[str, MagicMock] = {}
@@ -84,7 +86,15 @@ def make_runner():
 
 		connection = MagicMock()
 		connection.__class__ = Connection  # type: ignore[assignment]
-		connection.send_command.return_value = cli_output
+		if isinstance(cli_output, str):
+			connection.send_command.return_value = cli_output
+		else:
+			outputs = iter(cli_output)
+
+			def send_command(*_: Any, **__: Any) -> str:
+				return next(outputs, "")
+
+			connection.send_command.side_effect = send_command
 
 		monkeypatch.setattr(py_module, "Connection", lambda *_, **__: connection)
 		mocks["Connection"] = connection

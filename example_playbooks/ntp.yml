@@ -1,0 +1,18 @@
+---
+- name: Configure NTP on Brocade ICX switch
+  hosts: "{{ target_hosts | default('sw_uart') }}"
+  gather_facts: false
+
+  tasks:
+    - name: Add NTP server
+      bofzilla.icx.ntp:
+        servers:
+          - 134.59.1.5
+        state: enabled
+        save: true
+        enable_password: dummy
+      register: result
+
+    - name: Show result
+      ansible.builtin.debug:
+        var: result

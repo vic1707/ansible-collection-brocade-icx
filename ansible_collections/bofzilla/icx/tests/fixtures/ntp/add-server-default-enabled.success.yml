@@ -1,0 +1,28 @@
+---
+params:
+  servers:
+    - "129.6.15.28"
+  enable_password: secret
+
+output:
+  - |-
+    address            ref                clock    st    when    poll    reach    delay
+    * synced, # selected, + candidate, - outlayer, x falseticker, ~ configured
+  - |-
+    NTP server mode is enabled, NTP client mode is enabled
+
+expected:
+  changed: true
+  enabled: true
+  servers:
+    - "129.6.15.28"
+  command:
+    - "server 129.6.15.28"
+
+expected_diff:
+  before: |-
+    enabled: true
+    servers: none
+  after: |-
+    enabled: true
+    servers: 129.6.15.28

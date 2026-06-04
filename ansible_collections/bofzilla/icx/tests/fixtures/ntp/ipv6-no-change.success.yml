@@ -1,0 +1,23 @@
+---
+params:
+  servers:
+    - "2001:235::234"
+  enabled: true
+  enable_password: secret
+  save: true
+
+output:
+  - |-
+    address            ref                clock    st    when    poll    reach    delay
+    ~    2001:235::234
+    INIT 16 - 64 0 0.00 0.000 15937
+    * synced, # selected, + candidate, - outlayer, x falseticker, ~ configured
+  - |-
+    NTP server mode is enabled, NTP client mode is enabled
+
+expected:
+  changed: false
+  enabled: true
+  servers:
+    - "2001:235::234"
+  command: []
