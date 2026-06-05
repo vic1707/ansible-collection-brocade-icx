@@ -42,7 +42,7 @@ command:
 
 
 def main():
-	module = AnsibleModule(argument_spec=None, supports_check_mode=True)
+	module = AnsibleModule(argument_spec={}, supports_check_mode=True)
 	try:
 		client = CliClient(Connection(module._socket_path))
 		cmd = ShowClock()

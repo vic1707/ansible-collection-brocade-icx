@@ -12,7 +12,8 @@ class Command[Res](ABC):
 	- ``[...]`` → config sub-modes (enable, enter each mode, ``end`` after)
 	"""
 
-	modes: ClassVar[list[str] | None] = None
+	modes: list[str] | None = None
+	disable_paging: ClassVar[bool] = False
 
 	@abstractmethod
 	def command(self) -> str: ...

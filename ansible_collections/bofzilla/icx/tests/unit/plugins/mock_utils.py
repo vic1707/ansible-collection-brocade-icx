@@ -156,5 +156,22 @@ class _FakeCliClient:
 				return NtpAssociations(servers=frozenset(ip_address(server) for server in self.state["associations"]["servers"]))
 			case "ShowNtpStatus":
 				return NtpStatus(enabled=self.state["status"]["enabled"])
+			case "ShowRunningConfig":
+				return self.state.get("running_config", "")
+			case "ShowRunningConfigInclude":
+				if self.state.get("running_config_include_error"):
+					raise RuntimeError("pipe include unsupported")
+				pattern = cmd.pattern
+				return "\n".join(line for line in self.state.get("running_config", "").splitlines() if pattern in line)
+			case "ShowIpSshConfig":
+				return self.state.get("ip_ssh_config", "")
+			case "ShowUsers":
+				return self.state.get("users", "")
+			case "ShowVersion":
+				return self.state.get("version", "")
+			case "ShowChassis":
+				return self.state.get("chassis", "")
+			case "ShowLldpNeighbors":
+				return self.state.get("lldp_neighbors", "")
 			case _:
 				return None

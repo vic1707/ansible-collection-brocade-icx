@@ -1,0 +1,81 @@
+---
+- name: Bootstrap a factory-reset ICX from serial
+  hosts: "{{ target_hosts | default('sw_uart') }}"
+  gather_facts: false
+  vars:
+    icx_save_when: changed
+    icx_hostname: icx-homelab
+    icx_admin_user: admin
+    icx_admin_password: dummy
+    icx_dns_servers:
+      - 1.1.1.1
+      - 9.9.9.9
+    icx_dns_domains:
+      - home.arpa
+    icx_oob_management_mode: dhcp
+    icx_oob_management_ip: null
+    icx_oob_management_gateway: null
+
+  tasks:
+    - name: Configure system basics
+      bofzilla.icx.system:
+        hostname: "{{ icx_hostname }}"
+        dns_servers: "{{ icx_dns_servers }}"
+        dns_domains: "{{ icx_dns_domains }}"
+        logging:
+          console: false
+          cli_command: true
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Configure local authentication
+      bofzilla.icx.auth:
+        users:
+          - name: "{{ icx_admin_user }}"
+            privilege: 0
+            password: "{{ icx_admin_password }}"
+            update_password: on_create
+        aaa:
+          login_methods:
+            - local
+          enable_methods:
+            - local
+          privilege_mode: true
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Configure OOB management addressing
+      bofzilla.icx.management_oob:
+        mode: "{{ icx_oob_management_mode }}"
+        ip_address: "{{ icx_oob_management_ip | default(omit, true) }}"
+        default_gateway: "{{ icx_oob_management_gateway | default(omit, true) }}"
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Enable safe management access
+      bofzilla.icx.management_access:
+        ssh:
+          enabled: true
+          password_authentication: true
+          key_authentication: true
+          scp: true
+          idle_time: 30
+          timeout: 120
+        tftp:
+          enabled: false
+        web:
+          http: false
+          https: true
+        telnet:
+          authentication: true
+          timeout: 5
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Configure NTP
+      bofzilla.icx.ntp:
+        servers:
+          - 134.59.1.5
+        enabled: true
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"

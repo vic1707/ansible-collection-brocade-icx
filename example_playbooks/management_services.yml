@@ -1,0 +1,47 @@
+---
+- name: Configure ICX management services
+  hosts: "{{ target_hosts | default('sw_ssh') }}"
+  gather_facts: false
+  vars:
+    icx_save_when: changed
+    icx_syslog_host: 192.168.1.20
+    icx_snmp_community: homelab-ro
+
+  tasks:
+    - name: Configure management access
+      bofzilla.icx.management_access:
+        ssh:
+          enabled: true
+          password_authentication: true
+          key_authentication: true
+          scp: true
+          idle_time: 30
+        tftp:
+          enabled: false
+        web:
+          http: false
+          https: true
+        telnet:
+          authentication: true
+          timeout: 5
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Configure syslog
+      bofzilla.icx.logging:
+        enabled: true
+        hosts:
+          - address: "{{ icx_syslog_host }}"
+        persistence: true
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Configure simple SNMP
+      bofzilla.icx.snmp:
+        communities:
+          - name: "{{ icx_snmp_community }}"
+            access: ro
+        contact: ops@example.com
+        location: homelab
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"

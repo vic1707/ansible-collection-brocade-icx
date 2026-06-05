@@ -13,7 +13,7 @@ class TerminalModule(TerminalBase):
 		re.compile(rb"^\s*(Error|Invalid|Ambiguous|Incomplete|Bad)\b", re.I),
 		re.compile(rb"^\s*(Access denied|Authentication failed|Command authorization failed|Permission denied)\b", re.I),
 		re.compile(rb"\bnot found\b", re.I),
-		re.compile(rb"\btimed? ?out\b", re.I),
+		re.compile(rb"\btimed ?out\b", re.I),
 		re.compile(rb"returned error code:"),
 	]
 

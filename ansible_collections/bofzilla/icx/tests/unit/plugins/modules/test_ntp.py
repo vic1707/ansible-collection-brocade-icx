@@ -62,3 +62,21 @@ def test_ntp_diff_unchanged(module_runner):  # noqa: F811
 	data, _ = run(params=fixture.params or {}, diff=True)
 	assert "diff" not in data
 	assert data == fixture.expected
+
+
+def test_ntp_uses_running_config_when_associations_are_empty(module_runner):  # noqa: F811
+	run = module_runner(
+		ntp,
+		{
+			"associations": {"servers": []},
+			"running_config": "Current configuration:\n!\nntp\n server 134.59.1.5\n!\n",
+			"status": {"enabled": True},
+		},
+	)
+	data, _ = run(params={"servers": ["134.59.1.5"], "enabled": True, "save_when": "never"})
+	assert data == {
+		"changed": False,
+		"enabled": True,
+		"servers": ["134.59.1.5"],
+		"command": [],
+	}

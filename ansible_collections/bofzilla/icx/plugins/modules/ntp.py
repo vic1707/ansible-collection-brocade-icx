@@ -1,4 +1,5 @@
 import traceback
+from ipaddress import ip_address
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.connection import Connection
@@ -13,6 +14,8 @@ from ansible_collections.bofzilla.icx.plugins.module_utils.commands.ntp import (
 	ShowNtpStatus,
 )
 from ansible_collections.bofzilla.icx.plugins.module_utils.commands.system import WriteMemory
+from ansible_collections.bofzilla.icx.plugins.module_utils.config_state import running_config_matching
+from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import SAVE_WHEN_ARGUMENT_SPEC, clean_lines, config_blocks, resolve_save_when, should_save
 
 NtpCommand = RemoveNtpServer | SetNtpServer | DisableNtp | EnableNtp
 
@@ -38,11 +41,16 @@ options:
     default: true
   save:
     description:
-      - Whether to save the running-config to startup-config after
-        configuration changes.
+      - Deprecated compatibility alias for C(save_when).
     type: bool
     default: false
     required: false
+  save_when:
+    description:
+      - Whether to save the running-config to startup-config.
+    type: str
+    choices: [changed, always, never]
+    default: changed
   enable_password:
     description:
       - Password used to enter privileged EXEC mode (C(enable)).
@@ -103,33 +111,48 @@ enabled:
 """
 
 
+def _configured_servers(raw: str):
+	servers = set()
+	for line in clean_lines(raw):
+		if line.startswith("server "):
+			servers.add(ip_address(line.split()[1]))
+	for block in config_blocks(raw):
+		if not block or block[0] != "ntp":
+			continue
+		for line in block[1:]:
+			if line.startswith("server "):
+				servers.add(ip_address(line.split()[1]))
+	return frozenset(servers)
+
+
 def main():
 	module = AnsibleModule(
 		argument_spec={
 			**ICX_ARGUMENT_SPEC,
+			**SAVE_WHEN_ARGUMENT_SPEC,
 			"servers": {"type": "list", "elements": "str", "required": True},
 			"enabled": {"type": "bool", "default": True},
-			"save": {"type": "bool", "default": False},
 		},
 		supports_check_mode=True,
 	)
 	try:
 		desired_servers = frozenset(SetNtpServer(server=server).server for server in module.params["servers"])
 		desired_enabled = module.params["enabled"]
-		save = module.params.get("save")
 
 		client = CliClient(Connection(module._socket_path), enable_password=module.params.get("enable_password"))
 		associations = client.run(ShowNtpAssociations())
+		current_servers = associations.servers | _configured_servers(running_config_matching(client, ("server ",)))
 		status = client.run(ShowNtpStatus())
 
 		cmds: list[NtpCommand] = [
-			*(RemoveNtpServer(server=server) for server in sorted(associations.servers - desired_servers, key=str)),
-			*(SetNtpServer(server=server) for server in sorted(desired_servers - associations.servers, key=str)),
+			*(RemoveNtpServer(server=server) for server in sorted(current_servers - desired_servers, key=str)),
+			*(SetNtpServer(server=server) for server in sorted(desired_servers - current_servers, key=str)),
 		]
 		if status.enabled != desired_enabled:
 			cmds.append(EnableNtp() if desired_enabled else DisableNtp())
 
 		changed = bool(cmds)
+		save = should_save(resolve_save_when(module.params), changed)
 		result: dict = {
 			"changed": changed,
 			"enabled": desired_enabled,
@@ -139,7 +162,7 @@ def main():
 		if changed and getattr(module, "_diff", False):
 			before = [
 				f"enabled: {'true' if status.enabled else 'false'}",
-				f"servers: {', '.join(str(server) for server in sorted(associations.servers, key=str)) if associations.servers else 'none'}",
+				f"servers: {', '.join(str(server) for server in sorted(current_servers, key=str)) if current_servers else 'none'}",
 			]
 			after = [
 				f"enabled: {'true' if desired_enabled else 'false'}",

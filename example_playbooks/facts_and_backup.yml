@@ -1,0 +1,27 @@
+---
+- name: Gather facts and upload a config backup
+  hosts: "{{ target_hosts | default('sw_ssh') }}"
+  gather_facts: false
+  vars:
+    icx_backup_server: 192.168.1.10
+    icx_backup_filename: "{{ inventory_hostname }}-running.cfg"
+
+  tasks:
+    - name: Gather facts
+      bofzilla.icx.facts:
+        include_chassis: true
+        include_lldp: true
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+      register: icx_facts
+
+    - name: Show facts
+      ansible.builtin.debug:
+        var: icx_facts.ansible_facts.icx.device
+
+    - name: Upload running-config over TFTP
+      bofzilla.icx.backup:
+        source: running-config
+        protocol: tftp
+        server: "{{ icx_backup_server }}"
+        filename: "{{ icx_backup_filename }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"

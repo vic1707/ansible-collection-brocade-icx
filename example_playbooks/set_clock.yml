@@ -6,11 +6,11 @@
   tasks:
     - name: Set clock
       bofzilla.icx.clock:
-        # time: # omited so <now>
-        # timezone: # omited so host's current
+        # time: # omitted so <now>
+        # timezone: # omitted so host's current timezone
         summer_time: false
-        save: "true"
-        enable_password: "dummy"
+        save_when: changed
+        enable_password: "{{ icx_enable_password | default(omit) }}"
       register: result
 
     - name: Show what was set

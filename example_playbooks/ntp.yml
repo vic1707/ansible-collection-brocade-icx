@@ -8,9 +8,9 @@
       bofzilla.icx.ntp:
         servers:
           - 134.59.1.5
-        state: enabled
-        save: true
-        enable_password: dummy
+        enabled: true
+        save_when: changed
+        enable_password: "{{ icx_enable_password | default(omit) }}"
       register: result
 
     - name: Show result

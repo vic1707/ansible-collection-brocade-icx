@@ -12,6 +12,7 @@ from ansible_collections.bofzilla.icx.plugins.module_utils.commands.clock import
 )
 from ansible_collections.bofzilla.icx.plugins.module_utils.commands.show.clock import ShowClock
 from ansible_collections.bofzilla.icx.plugins.module_utils.commands.system import WriteMemory
+from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import SAVE_WHEN_ARGUMENT_SPEC, resolve_save_when, should_save
 
 REQUIRED_TOGETHER = [["time", "timezone"]]
 TIME_TOLERANCE = timedelta(seconds=1)
@@ -54,13 +55,16 @@ options:
     required: false
   save:
     description:
-      - Whether to save the running-config to startup-config after applying
-        configuration-mode commands (C(timezone), C(summer_time)).
-      - Has no effect when only C(time) is set (C(clock set) writes directly
-        to the hardware RTC and is not part of the config).
+      - Deprecated compatibility alias for C(save_when).
     type: bool
     default: false
     required: false
+  save_when:
+    description:
+      - Whether to save the running-config to startup-config after changes.
+    type: str
+    choices: [changed, always, never]
+    default: changed
   enable_password:
     description:
       - Password used to enter privileged EXEC mode (C(enable)).
@@ -139,10 +143,10 @@ def main():
 	module = AnsibleModule(
 		argument_spec={
 			**ICX_ARGUMENT_SPEC,
+			**SAVE_WHEN_ARGUMENT_SPEC,
 			"time": {"type": "str"},
 			"timezone": {"type": "str"},
 			"summer_time": {"type": "bool"},
-			"save": {"type": "bool", "default": False},
 		},
 		required_together=REQUIRED_TOGETHER,
 		supports_check_mode=True,
@@ -151,7 +155,7 @@ def main():
 		time_param = module.params.get("time")
 		timezone_param = module.params.get("timezone")
 		summer_time_param = module.params.get("summer_time")
-		save_param = module.params.get("save")
+		save_when = resolve_save_when(module.params)
 
 		commands: list[str] = []
 
@@ -199,7 +203,7 @@ def main():
 			if summer_cmd:
 				client.run(summer_cmd)
 			client.run(time_cmd)
-			if save_param:
+			if should_save(save_when, result["changed"]):
 				client.run(WriteMemory())
 
 		if result["changed"]:
@@ -207,7 +211,7 @@ def main():
 			if summer_cmd:
 				commands.append(summer_cmd.command())
 			commands.append(time_cmd.command())
-			if save_param:
+			if should_save(save_when, result["changed"]):
 				commands.append("write memory")
 				result["saved"] = True
 		result["timezone"] = tz_cmd.timezone

@@ -9,28 +9,37 @@ ENABLE_PASSWORD_PROMPT = r"[\r\n](?:Local_)?[Pp]assword: ?$"
 
 
 class Cliconf(CliconfBase):
-	def enable(self, password: str | None = None) -> None:
+	def enable(self, password: str | None = None, disable_paging: bool = False) -> None:
 		"""Ensure the session is in privileged EXEC mode (prompt ends with `#`).
 
 		Called on demand by commands that need it, so callers never have to
 		opt into Ansible's `become`. A no-op when already privileged.
 		"""
-		if self._is_privileged():
-			return
-		try:
-			self.send_command("enable", prompt=ENABLE_PASSWORD_PROMPT, answer=password or "")
-		except AnsibleConnectionFailure:
-			if not password:
-				raise AnsibleConnectionFailure("device requires an enable password but none was provided") from None
-			raise AnsibleConnectionFailure("failed to enter privileged EXEC mode (is enable_password correct?)") from None
-		if not self._is_privileged():
+		if self._is_config_mode():
+			self.send_command("end")
+		if not self._is_privileged_exec():
+			try:
+				self.send_command("enable", prompt=ENABLE_PASSWORD_PROMPT, answer=password or "")
+			except AnsibleConnectionFailure:
+				if not password:
+					raise AnsibleConnectionFailure("device requires an enable password but none was provided") from None
+				raise AnsibleConnectionFailure("failed to enter privileged EXEC mode (is enable_password correct?)") from None
+		if not self._is_privileged_exec():
 			raise AnsibleConnectionFailure("failed to enter privileged EXEC mode (is enable_password correct?)")
-		# Disable paging now that we're in privileged mode.
-		self.send_command("skip-page-display")
+		if disable_paging:
+			self.send_command("skip-page-display")
 
-	def _is_privileged(self) -> bool:
+	def _is_privileged_exec(self) -> bool:
 		prompt = self._connection.get_prompt()
-		return bool(prompt) and to_text(prompt).strip().endswith("#")
+		value = to_text(prompt).strip() if prompt else ""
+		return value.endswith("#") and not self._is_config_prompt(value)
+
+	def _is_config_mode(self) -> bool:
+		prompt = self._connection.get_prompt()
+		return self._is_config_prompt(to_text(prompt).strip() if prompt else "")
+
+	def _is_config_prompt(self, prompt: str) -> bool:
+		return bool(re.search(r"\([^)]+\)# ?$", prompt))
 
 	def get(self, command=None, prompt=None, answer=None, sendonly=False, newline=True, output=None, check_all=False):
 		return self.send_command(

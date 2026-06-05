@@ -18,7 +18,7 @@ class ICXConnection(Protocol):
 	the methods we rely on here restores type checking and editor completion.
 	"""
 
-	def enable(self, password: str | None = None) -> None: ...
+	def enable(self, password: str | None = None, disable_paging: bool = False) -> None: ...
 
 	def send_command(self, command: str) -> str: ...
 
@@ -32,11 +32,12 @@ class CliClient:
 		if cmd.modes is None:
 			return cmd.parse_res(self._conn.send_command(cmd.command()))
 
-		self._conn.enable(self.enable_password)
+		self._conn.enable(self.enable_password, disable_paging=cmd.disable_paging)
 		for mode in cmd.modes:
 			self._conn.send_command(mode)
 
 		try:
 			return cmd.parse_res(self._conn.send_command(cmd.command()))
 		finally:
-			self._conn.send_command("end")
+			if cmd.modes:
+				self._conn.send_command("end")

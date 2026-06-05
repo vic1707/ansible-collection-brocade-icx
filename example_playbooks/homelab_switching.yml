@@ -1,0 +1,58 @@
+---
+- name: Configure a simple ICX homelab switching layout
+  hosts: "{{ target_hosts | default('sw_ssh') }}"
+  gather_facts: false
+  vars:
+    icx_save_when: changed
+    icx_vlans:
+      - id: 10
+        name: clients
+      - id: 20
+        name: servers
+      - id: 30
+        name: iot
+      - id: 99
+        name: management
+        router_interface: 99
+    icx_interfaces:
+      - name: 1/1/1
+        description: uplink
+        mode: trunk
+        native_vlan: 99
+        allowed_vlans:
+          - 10
+          - 20
+          - 30
+          - 99
+      - name: 1/1/2
+        description: workstation
+        mode: access
+        access_vlan: 10
+      - name: 1/1/3
+        description: poe-ap
+        mode: access
+        access_vlan: 30
+        poe:
+          enabled: true
+          priority: 2
+
+  tasks:
+    - name: Configure VLANs
+      bofzilla.icx.vlans:
+        vlans: "{{ icx_vlans }}"
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Configure Ethernet ports
+      bofzilla.icx.interfaces:
+        interfaces: "{{ icx_interfaces }}"
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    - name: Enable LLDP
+      bofzilla.icx.lldp:
+        enabled: true
+        tagged_packets: true
+        transmit_interval: 40
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
