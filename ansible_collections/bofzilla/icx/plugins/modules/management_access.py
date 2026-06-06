@@ -43,11 +43,6 @@ options:
     description:
       - Telnet server, authentication, password, timeout, and restriction settings.
     type: dict
-  allow_lockout:
-    description:
-      - Allow changes that may lock out the current management path.
-    type: bool
-    default: false
   save_when:
     description:
       - When to save running-config to startup-config.
@@ -324,19 +319,6 @@ def _service_commands(params: dict[str, Any], current: dict[str, Any], desired: 
 	return cmds
 
 
-def _validate(params: dict[str, Any], desired: dict[str, Any]) -> None:
-	ssh = desired.get("ssh", {})
-	if not params.get("allow_lockout"):
-		if params.get("ssh", {}).get("enabled") is False:
-			raise ValueError("disabling SSH requires allow_lockout=true")
-		if params.get("telnet", {}).get("enabled") is False:
-			raise ValueError("disabling Telnet requires allow_lockout=true")
-		if ssh.get("password_authentication") is False and ssh.get("key_authentication") is False:
-			raise ValueError("disabling both SSH password and key authentication requires allow_lockout=true")
-		if ssh.get("permit_empty_password") is True:
-			raise ValueError("permit_empty_password=true requires allow_lockout=true")
-
-
 def _redacted(commands: list[ConfigLine], saved: bool) -> list[str]:
 	items = command_strings(commands, saved)
 	return [re.sub(r"(enable telnet password) .+", r"\1 ********", item) for item in items]
@@ -347,7 +329,6 @@ def main():
 		argument_spec={
 			**ICX_ARGUMENT_SPEC,
 			**SAVE_WHEN_ARGUMENT_SPEC,
-			"allow_lockout": {"type": "bool", "default": False},
 			"ssh": {
 				"type": "dict",
 				"options": {
@@ -428,7 +409,6 @@ def main():
 		current = {"ssh": _parse_ssh(client.run(ShowIpSshConfig())), **_parse_running(running_config_matching(client, MANAGEMENT_ACCESS_CONFIG_PATTERNS))}
 		current["telnet"].update(_parse_telnet_config(client.run(ShowTelnetConfig())))
 		desired = _desired(module.params, current)
-		_validate(module.params, desired)
 		cmds = [*_ssh_commands(module.params, current["ssh"], desired["ssh"]), *_service_commands(module.params, current, desired)]
 		changed = bool(cmds)
 		saved = run_config_commands(client, module, cmds, changed, resolve_save_when(module.params))
