@@ -6,7 +6,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.connection import Connection
 
 from ansible_collections.bofzilla.icx.plugins.module_utils.cli_client import ICX_ARGUMENT_SPEC, CliClient
-from ansible_collections.bofzilla.icx.plugins.module_utils.commands.config import ConfigLine, ShowIpSshConfig
+from ansible_collections.bofzilla.icx.plugins.module_utils.commands.config import ConfigLine, ShowIpSshConfig, ShowTelnetConfig
 from ansible_collections.bofzilla.icx.plugins.module_utils.config_state import running_config_matching
 from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import (
 	SAVE_WHEN_ARGUMENT_SPEC,
@@ -41,7 +41,7 @@ options:
     type: dict
   telnet:
     description:
-      - Telnet authentication, password, timeout, and restriction settings.
+      - Telnet server, authentication, password, timeout, and restriction settings.
     type: dict
   allow_lockout:
     description:
@@ -177,6 +177,26 @@ def _parse_running(raw: str) -> dict[str, Any]:
 	return {"tftp": tftp, "web": web, "telnet": telnet}
 
 
+def _parse_telnet_config(raw: str) -> dict[str, Any]:
+	state: dict[str, Any] = {}
+	for line in raw.splitlines():
+		line = line.strip()
+		if line.startswith("Telnet server"):
+			state["enabled"] = "enabled" in line.split(":", 1)[1].lower()
+		elif line.startswith("Idle timeout"):
+			state["timeout"] = _last_int(line)
+		elif line.startswith("Login timeout"):
+			state["login_timeout"] = _last_int(line)
+		elif line.startswith("Login retries"):
+			state["login_retries"] = _last_int(line)
+		elif line.startswith("Authentication"):
+			state["authentication"] = "enabled" in line.split(":", 1)[1].lower()
+		elif line.startswith("Telnet IPv4 access-group"):
+			value = line.split(":", 1)[1].strip()
+			state["access_group"] = value or None
+	return state
+
+
 def _desired(params: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
 	desired = {
 		"ssh": dict(current["ssh"]),
@@ -280,6 +300,8 @@ def _service_commands(params: dict[str, Any], current: dict[str, Any], desired: 
 		cmds.append(ConfigLine(f"web access-group {desired['web']['access_group']}"))
 
 	telnet = params.get("telnet") or {}
+	if telnet.get("enabled") is not None and current["telnet"].get("enabled") != desired["telnet"].get("enabled"):
+		cmds.append(ConfigLine("telnet server" if desired["telnet"]["enabled"] else "no telnet server"))
 	if telnet.get("authentication") is not None and current["telnet"].get("authentication") != desired["telnet"].get("authentication"):
 		cmds.append(ConfigLine("enable telnet authentication" if desired["telnet"]["authentication"] else "no enable telnet authentication"))
 	if telnet.get("password") is not None:
@@ -307,6 +329,8 @@ def _validate(params: dict[str, Any], desired: dict[str, Any]) -> None:
 	if not params.get("allow_lockout"):
 		if params.get("ssh", {}).get("enabled") is False:
 			raise ValueError("disabling SSH requires allow_lockout=true")
+		if params.get("telnet", {}).get("enabled") is False:
+			raise ValueError("disabling Telnet requires allow_lockout=true")
 		if ssh.get("password_authentication") is False and ssh.get("key_authentication") is False:
 			raise ValueError("disabling both SSH password and key authentication requires allow_lockout=true")
 		if ssh.get("permit_empty_password") is True:
@@ -386,6 +410,7 @@ def main():
 			"telnet": {
 				"type": "dict",
 				"options": {
+					"enabled": {"type": "bool"},
 					"authentication": {"type": "bool"},
 					"password": {"type": "str", "no_log": True},
 					"login_retries": {"type": "int"},
@@ -401,6 +426,7 @@ def main():
 	try:
 		client = CliClient(Connection(module._socket_path), enable_password=module.params.get("enable_password"))
 		current = {"ssh": _parse_ssh(client.run(ShowIpSshConfig())), **_parse_running(running_config_matching(client, MANAGEMENT_ACCESS_CONFIG_PATTERNS))}
+		current["telnet"].update(_parse_telnet_config(client.run(ShowTelnetConfig())))
 		desired = _desired(module.params, current)
 		_validate(module.params, desired)
 		cmds = [*_ssh_commands(module.params, current["ssh"], desired["ssh"]), *_service_commands(module.params, current, desired)]

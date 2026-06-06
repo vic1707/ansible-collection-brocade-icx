@@ -60,6 +60,16 @@ class ShowVersion(Command[str]):
 
 @dataclass(config=ConfigDict(extra="forbid"))
 @enabled
+class ShowTelnetConfig(Command[str]):
+	def command(self) -> str:
+		return "show telnet config"
+
+	def parse_res(self, raw: str) -> str:
+		return raw
+
+
+@dataclass(config=ConfigDict(extra="forbid"))
+@enabled
 class ShowChassis(Command[str]):
 	disable_paging: ClassVar[bool] = True
 

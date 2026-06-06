@@ -126,6 +126,33 @@ def test_management_access_rejects_ssh_lockout(module_runner):  # noqa: F811
 	assert data["msg"] == "ValueError: disabling SSH requires allow_lockout=true"
 
 
+def test_management_access_disables_telnet_with_lockout_ack(module_runner):  # noqa: F811
+	run = module_runner(
+		management_access,
+		{
+			"running_config": EMPTY_CONFIG,
+			"ip_ssh_config": "SSH server : Disabled\n",
+			"telnet_config": "Telnet server                   : Enabled\n",
+		},
+	)
+	data, _ = run(params={"allow_lockout": True, "telnet": {"enabled": False}})
+	assert data["changed"] is True
+	assert data["command"] == ["no telnet server", "write memory"]
+
+
+def test_management_access_rejects_telnet_lockout(module_runner):  # noqa: F811
+	run = module_runner(
+		management_access,
+		{
+			"running_config": EMPTY_CONFIG,
+			"ip_ssh_config": "SSH server : Disabled\n",
+			"telnet_config": "Telnet server                   : Enabled\n",
+		},
+	)
+	data, _ = run(params={"telnet": {"enabled": False}}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: disabling Telnet requires allow_lockout=true"
+
+
 def test_management_oob_enables_dhcp_client(module_runner):  # noqa: F811
 	run = module_runner(management_oob, {"running_config": EMPTY_CONFIG})
 	data, _ = run(

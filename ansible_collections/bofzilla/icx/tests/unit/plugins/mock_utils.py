@@ -165,6 +165,8 @@ class _FakeCliClient:
 				return "\n".join(line for line in self.state.get("running_config", "").splitlines() if pattern in line)
 			case "ShowIpSshConfig":
 				return self.state.get("ip_ssh_config", "")
+			case "ShowTelnetConfig":
+				return self.state.get("telnet_config", "")
 			case "ShowUsers":
 				return self.state.get("users", "")
 			case "ShowVersion":
