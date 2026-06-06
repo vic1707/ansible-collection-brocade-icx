@@ -31,18 +31,192 @@ options:
     description:
       - SSH server and SCP access settings.
     type: dict
+    suboptions:
+      enabled:
+        description:
+          - Whether the SSH server should be enabled.
+          - Enabling SSH generates missing host keys from C(host_keys), or a default RSA key when C(host_keys) is omitted.
+        type: bool
+      host_keys:
+        description:
+          - Host key types that should exist before SSH is enabled.
+        type: list
+        elements: dict
+        suboptions:
+          type:
+            description:
+              - Host key algorithm.
+            type: str
+            choices: [rsa, dsa]
+            required: true
+          modulus:
+            description:
+              - RSA modulus size used when generating an RSA host key.
+            type: int
+      authentication_retries:
+        description:
+          - Maximum SSH authentication retries.
+        type: int
+      idle_time:
+        description:
+          - SSH idle timeout in minutes.
+        type: int
+      timeout:
+        description:
+          - SSH login timeout in seconds.
+        type: int
+      port:
+        description:
+          - SSH TCP port.
+        type: int
+      password_authentication:
+        description:
+          - Whether SSH password authentication is accepted.
+        type: bool
+      key_authentication:
+        description:
+          - Whether SSH public-key authentication is accepted.
+        type: bool
+      interactive_authentication:
+        description:
+          - Whether SSH keyboard-interactive authentication is accepted.
+        type: bool
+      permit_empty_password:
+        description:
+          - Whether SSH permits empty local passwords.
+        type: bool
+      aes_only:
+        description:
+          - Whether to enable FastIron SSH AES-only encryption mode.
+        type: bool
+      disable_aes_cbc:
+        description:
+          - Whether to disable AES-CBC SSH ciphers.
+        type: bool
+      scp:
+        description:
+          - Whether SCP support over SSH should be enabled.
+        type: bool
+      strict_management_vrf:
+        description:
+          - Whether SSH should use strict management VRF behavior.
+        type: bool
+      access_group:
+        description:
+          - IPv4 access-list name or number restricting SSH access.
+        type: str
+      allowed_clients:
+        description:
+          - Explicit IPv4 SSH client addresses allowed by C(ip ssh client).
+        type: list
+        elements: str
+      pub_key_file:
+        description:
+          - Import or remove SSH user public keys through the FastIron TFTP pub-key-file mechanism.
+          - This hook is command-driven and should be used carefully because FastIron does not expose enough state for full key-content idempotence.
+        type: dict
+        suboptions:
+          server:
+            description:
+              - TFTP server address used when C(state=present).
+            type: str
+          filename:
+            description:
+              - Public-key filename on the TFTP server used when C(state=present).
+            type: str
+          state:
+            description:
+              - Whether to import the TFTP key file or remove imported public keys.
+            type: str
+            choices: [present, absent]
+            default: present
   tftp:
     description:
       - TFTP client access and source-interface settings.
     type: dict
+    suboptions:
+      enabled:
+        description:
+          - Whether the TFTP client is enabled.
+        type: bool
+      restricted_vlan:
+        description:
+          - VLAN from which the TFTP client is allowed.
+        type: int
+      source_interface:
+        description:
+          - Source interface used by TFTP client traffic.
+        type: dict
+        suboptions:
+          type:
+            description:
+              - Source interface type.
+            type: str
+            choices: [ethernet, loopback, management, ve]
+            required: true
+          name:
+            description:
+              - Source interface name or number.
+            type: str
+            required: true
   web:
     description:
       - Basic web management HTTP and HTTPS settings.
     type: dict
+    suboptions:
+      http:
+        description:
+          - Whether HTTP web management is enabled.
+        type: bool
+      https:
+        description:
+          - Whether HTTPS web management is enabled.
+        type: bool
+      enabled_vlan:
+        description:
+          - VLAN from which web management is allowed.
+        type: int
+      access_group:
+        description:
+          - Access-list name or number restricting web management.
+        type: str
   telnet:
     description:
       - Telnet server, authentication, password, timeout, and restriction settings.
     type: dict
+    suboptions:
+      enabled:
+        description:
+          - Whether the Telnet server is enabled.
+        type: bool
+      authentication:
+        description:
+          - Whether Telnet authentication is enabled.
+        type: bool
+      password:
+        description:
+          - Telnet password.
+        type: str
+      login_retries:
+        description:
+          - Maximum Telnet login retries.
+        type: int
+      login_timeout:
+        description:
+          - Telnet login timeout in seconds.
+        type: int
+      timeout:
+        description:
+          - Telnet idle timeout in minutes.
+        type: int
+      restricted_vlan:
+        description:
+          - VLAN from which Telnet server access is allowed.
+        type: int
+      access_group:
+        description:
+          - Access-list name or number restricting Telnet access.
+        type: str
   save_when:
     description:
       - When to save running-config to startup-config.

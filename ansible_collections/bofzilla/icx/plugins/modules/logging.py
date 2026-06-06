@@ -32,6 +32,16 @@ options:
       - Canonical remote syslog hosts.
     type: list
     elements: dict
+    suboptions:
+      address:
+        description:
+          - IPv4 address of the remote syslog host.
+        type: str
+        required: true
+      udp_port:
+        description:
+          - Optional UDP port for the remote syslog host.
+        type: int
   facility:
     description:
       - Syslog facility to configure.

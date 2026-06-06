@@ -40,18 +40,94 @@ options:
       - Local user accounts to create, update, enable, disable, or remove.
     type: list
     elements: dict
+    suboptions:
+      name:
+        description:
+          - Local username.
+        type: str
+        required: true
+      privilege:
+        description:
+          - FastIron user privilege level. C(0) is super-user.
+        type: int
+      password:
+        description:
+          - Plaintext password to configure.
+        type: str
+      nopassword:
+        description:
+          - Whether to configure the account with C(nopassword).
+        type: bool
+      update_password:
+        description:
+          - C(on_create) sets a password only when the user is missing.
+          - C(always) updates the password whenever the task runs and the user is present.
+        type: str
+        choices: [on_create, always]
+        default: on_create
+      enabled:
+        description:
+          - Whether the local user should be enabled.
+        type: bool
+      state:
+        description:
+          - Whether the local user should exist.
+        type: str
+        choices: [present, absent]
+        default: present
   enable_passwords:
     description:
       - Enable-level passwords for super-user, read-only, and port-config privilege levels.
     type: dict
+    suboptions:
+      super_user:
+        description:
+          - Password for full enable privilege.
+        type: str
+      read_only:
+        description:
+          - Password for read-only enable privilege.
+        type: str
+      port_config:
+        description:
+          - Password for port-configuration enable privilege.
+        type: str
   password_policy:
     description:
       - Local password minimum length and strict enforcement policy.
     type: dict
+    suboptions:
+      min_length:
+        description:
+          - Minimum password length.
+        type: int
+      strict:
+        description:
+          - Whether strict password enforcement is enabled.
+        type: bool
   aaa:
     description:
       - Local-first AAA login and enable method-list settings.
     type: dict
+    suboptions:
+      login_methods:
+        description:
+          - Methods for C(aaa authentication login default).
+        type: list
+        elements: str
+      enable_methods:
+        description:
+          - Methods for C(aaa authentication enable default).
+        type: list
+        elements: str
+      privilege_mode:
+        description:
+          - Whether to enable C(aaa authentication login privilege-mode).
+        type: bool
+      enable_implicit_user:
+        description:
+          - Whether to enable C(aaa authentication enable implicit-user).
+        type: bool
   save_when:
     description:
       - When to save running-config to startup-config.

@@ -231,10 +231,22 @@ interface ethernet 1/1/2
 
 def test_interfaces_trunk_check_mode_plans_without_running(module_runner):  # noqa: F811
 	run = module_runner(interfaces, {"running_config": "Current configuration:\n!\ninterface ethernet 1/1/48\n!\n"})
-	data, mocks = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "native_vlan": 1, "allowed_vlans": [10, 20]}]}, check_mode=True)
+	data, mocks = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "allowed_vlans": [10, 20]}]}, check_mode=True)
 	assert data["changed"] is True
 	assert data["saved"] is True
 	assert [cmd.command() for cmd in mocks["CliClient"].commands if cmd.__class__.__name__ == "ConfigLine"] == []
+
+
+def test_interfaces_rejects_native_vlan_on_trunk(module_runner):  # noqa: F811
+	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
+	data, _ = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "native_vlan": 1, "allowed_vlans": [10, 20]}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: interface 1/1/48: native_vlan is invalid with mode=trunk; use mode=general for a native VLAN"
+
+
+def test_interfaces_rejects_general_without_native_vlan(module_runner):  # noqa: F811
+	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
+	data, _ = run(params={"interfaces": [{"name": "1/1/3", "mode": "general", "allowed_vlans": [10, 20]}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: interface 1/1/3: native_vlan is required with mode=general"
 
 
 def test_lags_create_dynamic_lag(module_runner):  # noqa: F811

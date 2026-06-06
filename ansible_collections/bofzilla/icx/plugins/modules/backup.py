@@ -42,6 +42,18 @@ options:
     description:
       - Optional outgoing interface for SCP transfers.
     type: dict
+    suboptions:
+      type:
+        description:
+          - Outgoing interface type.
+        type: str
+        choices: [ethernet, ve]
+        required: true
+      name:
+        description:
+          - Outgoing interface name or number.
+        type: str
+        required: true
   public_key:
     description:
       - Optional SCP public-key authentication type.

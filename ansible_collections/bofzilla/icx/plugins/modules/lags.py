@@ -30,6 +30,44 @@ options:
     type: list
     elements: dict
     required: true
+    suboptions:
+      name:
+        description:
+          - LAG name.
+        type: str
+        required: true
+      mode:
+        description:
+          - LAG type. C(dynamic) uses LACP, C(static) is manually bundled, and C(keep-alive) is a single-port keepalive LAG.
+        type: str
+        choices: [static, dynamic, keep-alive]
+      id:
+        description:
+          - Numeric LAG ID for C(static) and C(dynamic) LAGs.
+        type: int
+      ports:
+        description:
+          - Ethernet member ports.
+        type: list
+        elements: str
+      primary_port:
+        description:
+          - Primary member port.
+        type: str
+      deployed:
+        description:
+          - Whether the LAG should be deployed.
+        type: bool
+      passive:
+        description:
+          - Whether to deploy a dynamic LAG in passive mode.
+        type: bool
+      state:
+        description:
+          - Whether the LAG should exist.
+        type: str
+        choices: [present, absent]
+        default: present
   save_when:
     description:
       - When to save running-config to startup-config.

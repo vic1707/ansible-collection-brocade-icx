@@ -43,9 +43,81 @@ options:
   interfaces:
     description:
       - Ethernet interface intents and per-port settings to manage.
+      - Omitted fields are left untouched, except for VLAN membership fields
+        implied by C(mode).
     type: list
     elements: dict
     required: true
+    suboptions:
+      name:
+        description:
+          - Ethernet port name, for example C(1/1/1) or C(1/2/1).
+        type: str
+        required: true
+      description:
+        description:
+          - Port name/comment configured with FastIron C(port-name).
+        type: str
+      mode:
+        description:
+          - VLAN membership intent for the port.
+          - C(access) makes the port untagged in exactly one VLAN and removes tagged VLAN membership.
+          - C(trunk) makes the port tagged-only for C(allowed_vlans), with no native/untagged VLAN.
+          - C(general) makes the port tagged for C(allowed_vlans) and sets one native/untagged VLAN with ICX C(dual-mode).
+        type: str
+        choices: [access, trunk, general]
+      access_vlan:
+        description:
+          - Untagged VLAN for C(mode=access). Defaults to C(1) when C(mode=access).
+        type: int
+      allowed_vlans:
+        description:
+          - Tagged VLANs for C(mode=trunk) and C(mode=general).
+        type: list
+        elements: int
+      native_vlan:
+        description:
+          - Native/untagged VLAN for C(mode=general), implemented with ICX C(dual-mode).
+          - Invalid with C(mode=trunk), because trunks are tagged-only in this module.
+        type: int
+      admin_state:
+        description:
+          - Administrative port state.
+        type: str
+        choices: [up, down]
+      speed_duplex:
+        description:
+          - FastIron C(speed-duplex) value, or C(auto) to remove explicit speed-duplex config.
+        type: str
+      voice_vlan:
+        description:
+          - Voice VLAN ID configured with C(voice-vlan).
+        type: int
+      poe:
+        description:
+          - Power over Ethernet settings for the port.
+        type: dict
+        suboptions:
+          enabled:
+            description:
+              - Whether inline power should be enabled.
+            type: bool
+          priority:
+            description:
+              - Inline power priority.
+            type: int
+          power_limit:
+            description:
+              - Inline power limit.
+            type: int
+          power_by_class:
+            description:
+              - Inline power class limit.
+            type: int
+          decouple_datalink:
+            description:
+              - Whether inline power should stay decoupled from data link state.
+            type: bool
   save_when:
     description:
       - When to save running-config to startup-config.
@@ -62,7 +134,6 @@ EXAMPLES = r"""
       - name: 1/1/1
         description: uplink
         mode: trunk
-        native_vlan: 1
         allowed_vlans: [10, 20, 30]
       - name: 1/1/2
         mode: access
@@ -70,6 +141,10 @@ EXAMPLES = r"""
         poe:
           enabled: true
           priority: 2
+      - name: 1/1/3
+        mode: general
+        native_vlan: 10
+        allowed_vlans: [10, 20, 30]
 """
 
 RETURN = r"""
@@ -90,6 +165,7 @@ interfaces:
 
 
 def _desired(item: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+	_validate_item(item)
 	desired = {
 		"name": item["name"],
 		"description": current.get("description"),
@@ -116,6 +192,25 @@ def _desired(item: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
 	if item.get("poe"):
 		desired["poe"].update({key: value for key, value in item["poe"].items() if value is not None})
 	return desired
+
+
+def _validate_item(item: dict[str, Any]) -> None:
+	mode = item.get("mode")
+	if mode == "access":
+		if item.get("allowed_vlans") is not None:
+			raise ValueError(f"interface {item['name']}: allowed_vlans is invalid with mode=access")
+		if item.get("native_vlan") is not None:
+			raise ValueError(f"interface {item['name']}: native_vlan is invalid with mode=access")
+	elif mode == "trunk":
+		if item.get("access_vlan") is not None:
+			raise ValueError(f"interface {item['name']}: access_vlan is invalid with mode=trunk")
+		if item.get("native_vlan") is not None:
+			raise ValueError(f"interface {item['name']}: native_vlan is invalid with mode=trunk; use mode=general for a native VLAN")
+	elif mode == "general":
+		if item.get("access_vlan") is not None:
+			raise ValueError(f"interface {item['name']}: access_vlan is invalid with mode=general")
+		if item.get("native_vlan") is None:
+			raise ValueError(f"interface {item['name']}: native_vlan is required with mode=general")
 
 
 def _membership_commands(current: dict[str, Any], desired: dict[str, Any]) -> list[ConfigLine]:

@@ -27,9 +27,37 @@ options:
   vlans:
     description:
       - VLAN definitions to manage.
+      - Port membership is managed by C(bofzilla.icx.interfaces), not here.
     type: list
     elements: dict
     required: true
+    suboptions:
+      id:
+        description:
+          - VLAN ID.
+        type: int
+        required: true
+      name:
+        description:
+          - Optional VLAN name.
+        type: str
+      router_interface:
+        description:
+          - VE ID to attach to the VLAN with C(router-interface ve).
+          - Use a future L3/VE module for VE IP addressing; this only attaches the VE.
+        type: int
+      management:
+        description:
+          - Whether to mark the VLAN with FastIron C(management-vlan).
+          - This is in-band management VLAN behavior, not the physical OOB management port.
+        type: bool
+        default: false
+      state:
+        description:
+          - Whether the VLAN should exist.
+        type: str
+        choices: [present, absent]
+        default: present
   purge:
     description:
       - Remove VLANs not listed in C(vlans).

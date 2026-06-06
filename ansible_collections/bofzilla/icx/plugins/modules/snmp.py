@@ -28,13 +28,50 @@ options:
   communities:
     description:
       - Canonical SNMP community strings and access modes.
+      - The list is authoritative when provided; omitted leaves current communities untouched.
     type: list
     elements: dict
+    suboptions:
+      name:
+        description:
+          - SNMP community string.
+        type: str
+        required: true
+      access:
+        description:
+          - Community access mode.
+        type: str
+        choices: [ro, rw]
+        required: true
+      acl:
+        description:
+          - Optional ACL suffix applied to the community command.
+        type: str
   hosts:
     description:
       - Canonical SNMP trap hosts.
+      - The list is authoritative when provided; omitted leaves current trap hosts untouched.
     type: list
     elements: dict
+    suboptions:
+      address:
+        description:
+          - Trap host IPv4 address or hostname.
+        type: str
+        required: true
+      version:
+        description:
+          - SNMP trap version.
+        type: str
+        choices: [v1, v2c]
+      community:
+        description:
+          - Community string used for this trap host.
+        type: str
+      port:
+        description:
+          - UDP trap port.
+        type: int
   contact:
     description:
       - SNMP contact string.
