@@ -16,9 +16,9 @@ expected:
     - "clock set 14:30:00 06-03-2026"
 
 diff:
-  before: |-
+  before: |
     clock: 2026-06-04T00:00:00
     timezone: gmt+00
-  after: |-
+  after: |
     clock: 2026-06-03T14:30:00
     timezone: gmt+00

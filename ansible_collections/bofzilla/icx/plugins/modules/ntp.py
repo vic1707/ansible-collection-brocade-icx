@@ -15,7 +15,7 @@ from ansible_collections.bofzilla.icx.plugins.module_utils.commands.ntp import (
 )
 from ansible_collections.bofzilla.icx.plugins.module_utils.commands.system import WriteMemory
 from ansible_collections.bofzilla.icx.plugins.module_utils.config_state import running_config_matching
-from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import SAVE_WHEN_ARGUMENT_SPEC, clean_lines, config_blocks, resolve_save_when, should_save
+from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import SAVE_WHEN_ARGUMENT_SPEC, clean_lines, config_blocks, resolve_save_when, should_save, text_diff
 
 NtpCommand = RemoveNtpServer | SetNtpServer | DisableNtp | EnableNtp
 
@@ -168,10 +168,7 @@ def main():
 				f"enabled: {'true' if desired_enabled else 'false'}",
 				f"servers: {', '.join(str(server) for server in sorted(desired_servers, key=str)) if desired_servers else 'none'}",
 			]
-			result["diff"] = {
-				"before": "\n".join(before),
-				"after": "\n".join(after),
-			}
+			result["diff"] = text_diff("\n".join(before), "\n".join(after))
 
 		if changed and not module.check_mode:
 			for cmd in cmds:

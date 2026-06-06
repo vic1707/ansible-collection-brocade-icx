@@ -25,9 +25,9 @@ expected:
     - "server 129.6.15.29"
 
 diff:
-  before: |-
+  before: |
     enabled: true
     servers: 129.6.15.28, 192.0.2.1
-  after: |-
+  after: |
     enabled: true
     servers: 129.6.15.28, 129.6.15.29

@@ -12,7 +12,7 @@ from ansible_collections.bofzilla.icx.plugins.module_utils.commands.clock import
 )
 from ansible_collections.bofzilla.icx.plugins.module_utils.commands.show.clock import ShowClock
 from ansible_collections.bofzilla.icx.plugins.module_utils.commands.system import WriteMemory
-from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import SAVE_WHEN_ARGUMENT_SPEC, resolve_save_when, should_save
+from ansible_collections.bofzilla.icx.plugins.module_utils.module_common import SAVE_WHEN_ARGUMENT_SPEC, resolve_save_when, should_save, text_diff
 
 REQUIRED_TOGETHER = [["time", "timezone"]]
 TIME_TOLERANCE = timedelta(seconds=1)
@@ -193,10 +193,7 @@ def main():
 			if summer_cmd:
 				before.append("summer_time: unknown")
 				after.append(f"summer_time: {'true' if summer_cmd.enabled else 'false'}")
-			result["diff"] = {
-				"before": "\n".join(before),
-				"after": "\n".join(after),
-			}
+			result["diff"] = text_diff("\n".join(before), "\n".join(after))
 
 		if result["changed"] and not module.check_mode:
 			client.run(tz_cmd)

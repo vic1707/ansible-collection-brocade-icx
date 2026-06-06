@@ -42,10 +42,21 @@ def command_strings(commands: Iterable[Any], saved: bool = False) -> list[str]:
 
 
 def json_diff(before: Any, after: Any) -> dict[str, str]:
+	return text_diff(
+		json.dumps(before, indent=2, sort_keys=True),
+		json.dumps(after, indent=2, sort_keys=True),
+	)
+
+
+def text_diff(before: str, after: str) -> dict[str, str]:
 	return {
-		"before": json.dumps(before, indent=2, sort_keys=True),
-		"after": json.dumps(after, indent=2, sort_keys=True),
+		"before": _ensure_trailing_newline(before),
+		"after": _ensure_trailing_newline(after),
 	}
+
+
+def _ensure_trailing_newline(value: str) -> str:
+	return value if value.endswith("\n") else f"{value}\n"
 
 
 def validate_ip(value: str) -> str:
