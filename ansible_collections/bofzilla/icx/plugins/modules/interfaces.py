@@ -51,7 +51,8 @@ options:
     suboptions:
       name:
         description:
-          - Ethernet port name, for example C(1/1/1) or C(1/2/1).
+          - Single Ethernet port name, for example C(1/1/1) or C(1/2/1).
+          - Port ranges are not accepted; provide one item per port.
         type: str
         required: true
       description:
@@ -195,6 +196,8 @@ def _desired(item: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
 
 
 def _validate_item(item: dict[str, Any]) -> None:
+	if " to " in item["name"]:
+		raise ValueError(f"interface {item['name']}: port ranges are unsupported; provide one item per port")
 	mode = item.get("mode")
 	if mode == "access":
 		if item.get("allowed_vlans") is not None:

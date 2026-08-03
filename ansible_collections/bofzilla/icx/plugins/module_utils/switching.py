@@ -85,17 +85,26 @@ def _parse_poe(line: str) -> dict[str, Any]:
 def _interface_membership(raw: str) -> dict[str, dict[str, Any]]:
 	membership: dict[str, dict[str, Any]] = {}
 	for vlan_id, vlan in parse_vlans(raw).items():
-		for port in vlan["tagged"]:
-			if " to " in port:
-				continue
-			membership.setdefault(port, {"tagged_vlans": [], "untagged_vlan": None})["tagged_vlans"].append(vlan_id)
-		for port in vlan["untagged"]:
-			if " to " in port:
-				continue
-			membership.setdefault(port, {"tagged_vlans": [], "untagged_vlan": None})["untagged_vlan"] = vlan_id
+		for port_range in vlan["tagged"]:
+			for port in _expand_port_range(port_range):
+				membership.setdefault(port, {"tagged_vlans": [], "untagged_vlan": None})["tagged_vlans"].append(vlan_id)
+		for port_range in vlan["untagged"]:
+			for port in _expand_port_range(port_range):
+				membership.setdefault(port, {"tagged_vlans": [], "untagged_vlan": None})["untagged_vlan"] = vlan_id
 	for state in membership.values():
 		state["tagged_vlans"] = sorted(state["tagged_vlans"])
 	return membership
+
+
+def _expand_port_range(value: str) -> list[str]:
+	if " to " not in value:
+		return [value]
+	start, end = value.split(" to ", 1)
+	start_prefix, start_port = start.rsplit("/", 1)
+	end_prefix, end_port = end.rsplit("/", 1)
+	if start_prefix != end_prefix:
+		raise ValueError(f"cross-slot port range is unsupported: {value}")
+	return [f"{start_prefix}/{port}" for port in range(int(start_port), int(end_port) + 1)]
 
 
 def parse_ve_interfaces(raw: str) -> dict[int, dict[str, Any]]:

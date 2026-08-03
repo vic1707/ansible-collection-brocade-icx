@@ -229,6 +229,29 @@ interface ethernet 1/1/2
 	]
 
 
+def test_interfaces_trunk_removes_untagged_membership_from_range(module_runner):  # noqa: F811
+	run = module_runner(
+		interfaces,
+		{
+			"running_config": """Current configuration:
+!
+vlan 1 by port
+untagged ethernet 1/1/1 to 1/1/48
+!
+interface ethernet 1/1/48
+!
+""",
+		},
+	)
+	data, _ = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "allowed_vlans": [10, 20]}]})
+	assert data["command"] == [
+		"tagged ethernet 1/1/48",
+		"tagged ethernet 1/1/48",
+		"no untagged ethernet 1/1/48",
+		"write memory",
+	]
+
+
 def test_interfaces_trunk_check_mode_plans_without_running(module_runner):  # noqa: F811
 	run = module_runner(interfaces, {"running_config": "Current configuration:\n!\ninterface ethernet 1/1/48\n!\n"})
 	data, mocks = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "allowed_vlans": [10, 20]}]}, check_mode=True)
@@ -241,6 +264,12 @@ def test_interfaces_rejects_native_vlan_on_trunk(module_runner):  # noqa: F811
 	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
 	data, _ = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "native_vlan": 1, "allowed_vlans": [10, 20]}]}, expect=AnsibleFailJson)
 	assert data["msg"] == "ValueError: interface 1/1/48: native_vlan is invalid with mode=trunk; use mode=general for a native VLAN"
+
+
+def test_interfaces_rejects_port_range(module_runner):  # noqa: F811
+	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
+	data, _ = run(params={"interfaces": [{"name": "1/1/1 to 1/1/48", "mode": "trunk", "allowed_vlans": [10]}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: interface 1/1/1 to 1/1/48: port ranges are unsupported; provide one item per port"
 
 
 def test_interfaces_rejects_general_without_native_vlan(module_runner):  # noqa: F811
