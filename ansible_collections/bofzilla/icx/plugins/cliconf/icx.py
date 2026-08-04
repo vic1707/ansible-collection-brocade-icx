@@ -5,7 +5,8 @@ from ansible.errors import AnsibleConnectionFailure
 from ansible.module_utils.common.text.converters import to_text
 from ansible.plugins.cliconf import CliconfBase
 
-ENABLE_PASSWORD_PROMPT = r"[\r\n](?:Local_)?[Pp]assword: ?$"
+ENABLE_PASSWORD_PROMPT = r"[\r\n](?:Local_|Enable )?[Pp]assword: ?$"
+ENABLE_USERNAME_PROMPT = r"[\r\n](?:[Uu]ser ?[Nn]ame|[Uu]sername): ?$"
 
 
 class Cliconf(CliconfBase):
@@ -18,8 +19,11 @@ class Cliconf(CliconfBase):
 		if self._is_config_mode():
 			self.send_command("end")
 		if not self._is_privileged_exec():
+			username = self._connection.get_option("remote_user")
+			prompts = [ENABLE_USERNAME_PROMPT, ENABLE_PASSWORD_PROMPT] if username else ENABLE_PASSWORD_PROMPT
+			answers = [username, password or ""] if username else password or ""
 			try:
-				self.send_command("enable", prompt=ENABLE_PASSWORD_PROMPT, answer=password or "")
+				self.send_command("enable", prompt=prompts, answer=answers)
 			except AnsibleConnectionFailure:
 				if not password:
 					raise AnsibleConnectionFailure("device requires an enable password but none was provided") from None
