@@ -5,7 +5,7 @@ from ansible.plugins.terminal import TerminalBase
 
 class TerminalModule(TerminalBase):
 	terminal_stdout_re = [
-		re.compile(rb"(?:^|[\r\n])[\w@\+\-\.:\/\[\]]+(?:\([^\)]+\)){0,3}[>#] ?$"),
+		re.compile(rb"(?:^|[\r\n])[\w @\+\-\.:\/\[\]]+(?:\([^\)]+\)){0,3}[>#] ?$"),
 		re.compile(rb"Finished downloading public key file!"),
 	]
 
