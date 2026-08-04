@@ -185,9 +185,16 @@ class Connection(NetworkConnectionBase):
 		if self._serial and self._serial.is_open:
 			with contextlib.suppress(Exception):
 				self._terminal.on_close_shell()
+			with contextlib.suppress(Exception):
+				self._logout()
 			self._serial.close()
 			self._serial = None
 		super().close()
+
+	def _logout(self):
+		assert self._serial is not None
+		self._serial.write(b"\x03\rlogout\r")
+		self._serial.flush()
 
 	def exec_command(self, cmd: CommandText, in_data=None, sudoable=True):
 		if not self._serial or not self._serial.is_open:
@@ -315,20 +322,18 @@ class Connection(NetworkConnectionBase):
 		if not prompts:
 			return True
 
-		prompt = prompts[0] if check_all else next((p for p in prompts if self._prompt_matches(window, p)), None)
-		if prompt is None or not self._prompt_matches(window, prompt):
+		prompt_index = 0 if check_all else next((index for index, prompt in enumerate(prompts) if self._prompt_matches(window, prompt)), None)
+		if prompt_index is None:
 			return False
 
-		if answers:
-			self._serial.write(to_bytes(answers[0], errors="surrogate_or_strict") + (b"\r" if newline else b""))
+		if len(answers) > prompt_index:
+			self._serial.write(to_bytes(answers[prompt_index], errors="surrogate_or_strict") + (b"\r" if newline else b""))
 			self._serial.flush()
 
-		if check_all:
-			prompts.pop(0)
-			if answers:
-				answers.pop(0)
-			return not prompts
-		return True
+		prompts.pop(prompt_index)
+		if len(answers) > prompt_index:
+			answers.pop(prompt_index)
+		return not prompts
 
 	def _listify(self, value: CommandTextInput) -> list[CommandText]:
 		if value is None:
