@@ -188,7 +188,7 @@ def _parse_auth_config(raw: str) -> dict[str, Any]:
 	policy: dict[str, Any] = {"strict": "enable strict-password-enforcement" in lines}
 	if line := first_matching(lines, "enable password-min-length "):
 		policy["min_length"] = int(line.removeprefix("enable password-min-length "))
-	aaa: dict[str, Any] = {}
+	aaa: dict[str, Any] = {"login_methods": [], "enable_methods": []}
 	if line := first_matching(lines, "aaa authentication login default "):
 		aaa["login_methods"] = line.removeprefix("aaa authentication login default ").split()
 	if line := first_matching(lines, "aaa authentication enable default "):
@@ -223,6 +223,10 @@ def _desired(params: dict[str, Any], users: dict[str, dict[str, Any]], config: d
 	}
 	if params.get("password_policy"):
 		desired["password_policy"].update({key: value for key, value in params["password_policy"].items() if value is not None})
+	if params.get("enable_passwords"):
+		for key in ("super_user", "read_only", "port_config"):
+			if params["enable_passwords"].get(key) is not None:
+				desired["enable_passwords"][key] = True
 	if params.get("aaa"):
 		desired["aaa"].update({key: value for key, value in params["aaa"].items() if value is not None})
 	return desired
@@ -276,9 +280,11 @@ def _commands(params: dict[str, Any], users: dict[str, dict[str, Any]], config: 
 
 	aaa = params.get("aaa") or {}
 	if aaa.get("login_methods") is not None and config["aaa"].get("login_methods") != desired["aaa"].get("login_methods"):
-		cmds.append(ConfigLine(f"aaa authentication login default {' '.join(desired['aaa']['login_methods'])}"))
+		methods = desired["aaa"]["login_methods"]
+		cmds.append(ConfigLine(f"aaa authentication login default {' '.join(methods)}" if methods else "no aaa authentication login default"))
 	if aaa.get("enable_methods") is not None and config["aaa"].get("enable_methods") != desired["aaa"].get("enable_methods"):
-		cmds.append(ConfigLine(f"aaa authentication enable default {' '.join(desired['aaa']['enable_methods'])}"))
+		methods = desired["aaa"]["enable_methods"]
+		cmds.append(ConfigLine(f"aaa authentication enable default {' '.join(methods)}" if methods else "no aaa authentication enable default"))
 	for key, line in {
 		"privilege_mode": "aaa authentication login privilege-mode",
 		"enable_implicit_user": "aaa authentication enable implicit-user",
@@ -289,11 +295,18 @@ def _commands(params: dict[str, Any], users: dict[str, dict[str, Any]], config: 
 
 
 def _validate_lockout(params: dict[str, Any], desired: dict[str, Any]) -> None:
+	for user in params.get("users") or []:
+		if user.get("password") is not None and not 1 <= len(user["password"]) <= 48:
+			raise ValueError(f"user {user['name']} password must contain 1 through 48 characters")
 	aaa = params.get("aaa") or {}
 	if any(methods is not None for methods in (aaa.get("login_methods"), aaa.get("enable_methods"))):
 		local_methods = [*(aaa.get("login_methods") or []), *(aaa.get("enable_methods") or [])]
 		if "local" in local_methods and not any(user["enabled"] and user["privilege"] == 0 for user in desired["users"].values()):
 			raise ValueError("local AAA requires at least one enabled privilege 0 user")
+	if "enable" in (aaa.get("enable_methods") or []) and not desired["enable_passwords"]["super_user"]:
+		raise ValueError("enable AAA requires a configured super-user password")
+	if desired["aaa"].get("enable_methods") and not desired["users"]:
+		raise ValueError("enable AAA requires at least one local user")
 	if re.search(r"\bnone\b", " ".join(aaa.get("login_methods") or [])) and not params.get("allow_insecure_none"):
 		raise ValueError("AAA method 'none' requires allow_insecure_none=true")
 

@@ -85,6 +85,59 @@ def test_auth_rejects_local_aaa_without_super_user(module_runner):  # noqa: F811
 	assert data["msg"] == "ValueError: local AAA requires at least one enabled privilege 0 user"
 
 
+def test_auth_rejects_password_longer_than_fastiron_limit(module_runner):  # noqa: F811
+	run = module_runner(auth, {"running_config": EMPTY_CONFIG, "users": ""})
+	data, _ = run(params={"users": [{"name": "admin", "password": "x" * 49}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: user admin password must contain 1 through 48 characters"
+
+
+def test_auth_rejects_enable_aaa_without_super_user_password(module_runner):  # noqa: F811
+	run = module_runner(auth, {"running_config": EMPTY_CONFIG, "users": ""})
+	data, _ = run(params={"aaa": {"enable_methods": ["enable"]}}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: enable AAA requires a configured super-user password"
+
+
+def test_auth_clears_aaa_method_lists(module_runner):  # noqa: F811
+	run = module_runner(
+		auth,
+		{
+			"running_config": "aaa authentication login default local\naaa authentication enable default local\n",
+			"users": "",
+		},
+	)
+	data, _ = run(params={"aaa": {"login_methods": [], "enable_methods": []}})
+	assert data["command"] == [
+		"no aaa authentication login default",
+		"no aaa authentication enable default",
+		"write memory",
+	]
+
+
+def test_auth_cleared_login_method_list_is_idempotent(module_runner):  # noqa: F811
+	run = module_runner(
+		auth,
+		{
+			"running_config": "enable super-user-password .....\naaa authentication enable default enable\n",
+			"users": "admin x enabled 0 enabled",
+		},
+	)
+	data, _ = run(params={"aaa": {"login_methods": [], "enable_methods": ["enable"]}})
+	assert data["changed"] is False
+	assert data["command"] == []
+
+
+def test_auth_rejects_deleting_last_user_with_enable_aaa(module_runner):  # noqa: F811
+	run = module_runner(
+		auth,
+		{
+			"running_config": "enable super-user-password .....\naaa authentication enable default enable\n",
+			"users": "admin x enabled 0 enabled",
+		},
+	)
+	data, _ = run(params={"users": [{"name": "admin", "state": "absent"}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: enable AAA requires at least one local user"
+
+
 def test_management_access_configures_services_and_redacts_telnet_password(module_runner):  # noqa: F811
 	run = module_runner(
 		management_access,
@@ -196,6 +249,12 @@ def test_vlans_configures_management_vlan_flag(module_runner):  # noqa: F811
 		"management-vlan",
 		"write memory",
 	]
+
+
+def test_vlans_create_without_management_flag(module_runner):  # noqa: F811
+	run = module_runner(vlans, {"running_config": EMPTY_CONFIG})
+	data, _ = run(params={"vlans": [{"id": 10, "name": "mgmt"}]})
+	assert data["command"] == ["vlan 10 name mgmt by port", "write memory"]
 
 
 def test_vlans_no_change(module_runner):  # noqa: F811

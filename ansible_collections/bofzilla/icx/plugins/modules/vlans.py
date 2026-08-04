@@ -50,6 +50,7 @@ options:
         description:
           - Whether to mark the VLAN with FastIron C(management-vlan).
           - This is in-band management VLAN behavior, not the physical OOB management port.
+          - Supported by FastIron switch images only; omit it on router images.
         type: bool
         default: false
       state:
@@ -145,8 +146,10 @@ def _commands(params: dict[str, Any], current: dict[int, dict[str, Any]], desire
 				cmds.append(ConfigLine(f"no router-interface ve {cur['router_interface']}", mode))
 			if des.get("router_interface"):
 				cmds.append(ConfigLine(f"router-interface ve {des['router_interface']}", mode))
-		if cur is None or cur.get("management", False) != des.get("management", False):
-			cmds.append(ConfigLine("management-vlan" if des.get("management") else "no management-vlan", mode))
+		if des.get("management") and not (cur or {}).get("management", False):
+			cmds.append(ConfigLine("management-vlan", mode))
+		elif cur and cur.get("management", False) and not des.get("management"):
+			cmds.append(ConfigLine("no management-vlan", mode))
 	return cmds
 
 
