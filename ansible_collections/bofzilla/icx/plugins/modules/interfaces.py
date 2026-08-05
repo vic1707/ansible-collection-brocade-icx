@@ -214,6 +214,26 @@ def _validate_item(item: dict[str, Any]) -> None:
 			raise ValueError(f"interface {item['name']}: access_vlan is invalid with mode=general")
 		if item.get("native_vlan") is None:
 			raise ValueError(f"interface {item['name']}: native_vlan is required with mode=general")
+	for vlan_id in [item.get("access_vlan"), item.get("native_vlan"), *(item.get("allowed_vlans") or [])]:
+		if vlan_id is not None and not 1 <= vlan_id <= 4094:
+			raise ValueError(f"interface {item['name']}: VLAN ID must be between 1 and 4094: {vlan_id}")
+
+
+def _current_intent(current: dict[str, Any]) -> dict[str, Any]:
+	if current.get("dual_mode"):
+		mode = "general"
+	elif current.get("tagged_vlans"):
+		mode = "trunk"
+	else:
+		mode = "access"
+	item: dict[str, Any] = {"name": current["name"], "mode": mode}
+	if mode == "access":
+		item["access_vlan"] = current.get("untagged_vlan", 1)
+	else:
+		item["allowed_vlans"] = current.get("tagged_vlans", [])
+	if mode == "general":
+		item["native_vlan"] = current["dual_mode"]
+	return _desired(item, current)
 
 
 def _membership_commands(current: dict[str, Any], desired: dict[str, Any]) -> list[ConfigLine]:
@@ -223,12 +243,15 @@ def _membership_commands(current: dict[str, Any], desired: dict[str, Any]) -> li
 	desired_tagged = set(desired.get("allowed_vlans") or [])
 	current_untagged = current.get("untagged_vlan")
 	desired_untagged = desired.get("access_vlan")
+	removed_nondefault = current_untagged != desired_untagged and current_untagged not in {None, 1}
 	for vlan_id in sorted(current_tagged - desired_tagged):
 		cmds.append(ConfigLine(f"no tagged ethernet {name}", vlan_header(vlan_id)))
+	if removed_nondefault and current_untagged is not None:
+		cmds.append(ConfigLine(f"no untagged ethernet {name}", vlan_header(int(current_untagged))))
 	for vlan_id in sorted(desired_tagged - current_tagged):
 		cmds.append(ConfigLine(f"tagged ethernet {name}", vlan_header(vlan_id)))
 	if current_untagged != desired_untagged:
-		if current_untagged:
+		if current_untagged and not removed_nondefault:
 			cmds.append(ConfigLine(f"no untagged ethernet {name}", vlan_header(current_untagged)))
 		if desired_untagged:
 			cmds.append(ConfigLine(f"untagged ethernet {name}", vlan_header(desired_untagged)))
@@ -317,13 +340,16 @@ def main():
 	try:
 		client = CliClient(Connection(module._socket_path), enable_password=module.params.get("enable_password"))
 		current_all = parse_interfaces(client.run(ShowRunningConfig()))
+		items = module.params["interfaces"]
+		if len({item["name"] for item in items}) != len(items):
+			raise ValueError("interface names must be unique")
 		desired_items: list[dict[str, Any]] = []
 		cmds: list[ConfigLine] = []
 		current_items: list[dict[str, Any]] = []
-		for item in module.params["interfaces"]:
+		for item in items:
 			current = current_all.get(item["name"], {"name": item["name"], "tagged_vlans": [], "untagged_vlan": None, "poe": {"enabled": None}})
 			desired = _desired(item, current)
-			current_items.append(current)
+			current_items.append(_current_intent(current))
 			desired_items.append(desired)
 			cmds.extend(_commands(current, desired, item))
 		changed = bool(cmds)

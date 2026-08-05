@@ -264,6 +264,46 @@ def test_vlans_no_change(module_runner):  # noqa: F811
 	assert data["command"] == []
 
 
+def test_vlans_configures_ve_address(module_runner):  # noqa: F811
+	run = module_runner(vlans, {"running_config": EMPTY_CONFIG})
+	data, mocks = run(params={"vlans": [{"id": 10, "name": "mgmt", "router_interface": 10, "ip_address": "10.0.10.2/24"}]}, diff=True)
+	assert data["changed"] is True
+	assert data["command"] == [
+		"vlan 10 name mgmt by port",
+		"router-interface ve 10",
+		"ip address 10.0.10.2/24",
+		"write memory",
+	]
+	commands = [cmd for cmd in mocks["CliClient"].commands if cmd.__class__.__name__ == "ConfigLine"]
+	assert [cmd.modes[-1] for cmd in commands] == ["configure terminal", "vlan 10 name mgmt by port", "interface ve 10"]
+	assert "diff" in data
+
+
+def test_vlans_normalizes_ve_netmask(module_runner):  # noqa: F811
+	run = module_runner(
+		vlans,
+		{"running_config": "Current configuration:\n!\nvlan 10 name mgmt by port\n router-interface ve 10\n!\ninterface ve 10\n ip address 10.0.10.2 255.255.255.0\n!\n"},
+	)
+	data, _ = run(params={"vlans": [{"id": 10, "name": "mgmt", "router_interface": 10, "ip_address": "10.0.10.2/24"}]})
+	assert data["changed"] is False
+	assert data["command"] == []
+
+
+def test_vlans_replaces_ve_address(module_runner):  # noqa: F811
+	run = module_runner(
+		vlans,
+		{"running_config": "Current configuration:\n!\nvlan 10 name mgmt by port\n router-interface ve 10\n!\ninterface ve 10\n ip address 10.0.10.3/24\n!\n"},
+	)
+	data, _ = run(params={"vlans": [{"id": 10, "name": "mgmt", "router_interface": 10, "ip_address": "10.0.10.2/24"}]})
+	assert data["command"] == ["no ip address 10.0.10.3/24", "ip address 10.0.10.2/24", "write memory"]
+
+
+def test_vlans_rejects_ve_address_without_router_interface(module_runner):  # noqa: F811
+	run = module_runner(vlans, {"running_config": EMPTY_CONFIG})
+	data, _ = run(params={"vlans": [{"id": 10, "ip_address": "10.0.10.2/24"}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: VLAN 10: ip_address requires router_interface"
+
+
 def test_interfaces_access_port_translates_membership_and_poe(module_runner):  # noqa: F811
 	run = module_runner(
 		interfaces,
@@ -311,6 +351,64 @@ interface ethernet 1/1/48
 	]
 
 
+def test_interfaces_moves_nondefault_access_port_to_trunk(module_runner):  # noqa: F811
+	run = module_runner(
+		interfaces,
+		{
+			"running_config": """Current configuration:
+!
+vlan 999 name parking by port
+untagged ethernet 1/2/1
+!
+interface ethernet 1/2/1
+!
+""",
+		},
+	)
+	data, mocks = run(params={"interfaces": [{"name": "1/2/1", "mode": "trunk", "allowed_vlans": [10]}]}, diff=True)
+	assert data["command"] == [
+		"no untagged ethernet 1/2/1",
+		"tagged ethernet 1/2/1",
+		"write memory",
+	]
+	commands = [cmd for cmd in mocks["CliClient"].commands if cmd.__class__.__name__ == "ConfigLine"]
+	assert [cmd.modes[-1] for cmd in commands] == ["vlan 999 by port", "vlan 10 by port"]
+	assert '"mode": "access"' in data["diff"]["before"]
+	assert '"tagged_vlans"' not in data["diff"]["before"]
+
+
+def test_interfaces_moves_nondefault_access_port_to_access_vlan(module_runner):  # noqa: F811
+	run = module_runner(
+		interfaces,
+		{
+			"running_config": """Current configuration:
+!
+vlan 999 name parking by port
+untagged ethernet 1/1/3
+!
+interface ethernet 1/1/3
+ disable
+!
+""",
+		},
+	)
+	data, mocks = run(params={"interfaces": [{"name": "1/1/3", "description": "user-test", "mode": "access", "access_vlan": 20, "admin_state": "up"}]})
+	assert data["command"] == [
+		"no untagged ethernet 1/1/3",
+		"untagged ethernet 1/1/3",
+		"port-name user-test",
+		"enable",
+		"write memory",
+	]
+	commands = [cmd for cmd in mocks["CliClient"].commands if cmd.__class__.__name__ == "ConfigLine"]
+	assert [cmd.modes[-1] for cmd in commands] == [
+		"vlan 999 by port",
+		"vlan 20 by port",
+		"interface ethernet 1/1/3",
+		"interface ethernet 1/1/3",
+	]
+
+
 def test_interfaces_trunk_check_mode_plans_without_running(module_runner):  # noqa: F811
 	run = module_runner(interfaces, {"running_config": "Current configuration:\n!\ninterface ethernet 1/1/48\n!\n"})
 	data, mocks = run(params={"interfaces": [{"name": "1/1/48", "mode": "trunk", "allowed_vlans": [10, 20]}]}, check_mode=True)
@@ -329,6 +427,21 @@ def test_interfaces_rejects_port_range(module_runner):  # noqa: F811
 	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
 	data, _ = run(params={"interfaces": [{"name": "1/1/1 to 1/1/48", "mode": "trunk", "allowed_vlans": [10]}]}, expect=AnsibleFailJson)
 	assert data["msg"] == "ValueError: interface 1/1/1 to 1/1/48: port ranges are unsupported; provide one item per port"
+
+
+def test_interfaces_rejects_duplicate_names(module_runner):  # noqa: F811
+	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
+	data, _ = run(
+		params={"interfaces": [{"name": "1/1/1", "mode": "access"}, {"name": "1/1/1", "mode": "trunk", "allowed_vlans": [10]}]},
+		expect=AnsibleFailJson,
+	)
+	assert data["msg"] == "ValueError: interface names must be unique"
+
+
+def test_interfaces_rejects_invalid_vlan(module_runner):  # noqa: F811
+	run = module_runner(interfaces, {"running_config": EMPTY_CONFIG})
+	data, _ = run(params={"interfaces": [{"name": "1/1/1", "mode": "trunk", "allowed_vlans": [4095]}]}, expect=AnsibleFailJson)
+	assert data["msg"] == "ValueError: interface 1/1/1: VLAN ID must be between 1 and 4094: 4095"
 
 
 def test_interfaces_rejects_general_without_native_vlan(module_runner):  # noqa: F811

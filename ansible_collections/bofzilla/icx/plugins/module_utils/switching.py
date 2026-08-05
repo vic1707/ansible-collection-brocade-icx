@@ -111,10 +111,10 @@ def parse_ve_interfaces(raw: str) -> dict[int, dict[str, Any]]:
 	interfaces: dict[int, dict[str, Any]] = {}
 	for header, body in blocks_by_prefix(raw, "interface ve ").items():
 		ve_id = int(header.removeprefix("interface ve "))
-		interfaces[ve_id] = {"id": ve_id, "ip_address": None}
+		interfaces[ve_id] = {"id": ve_id, "ip_addresses": []}
 		for line in body:
 			if line.startswith("ip address "):
-				interfaces[ve_id]["ip_address"] = line.removeprefix("ip address ")
+				interfaces[ve_id]["ip_addresses"].append(line.removeprefix("ip address "))
 	return interfaces
 
 
