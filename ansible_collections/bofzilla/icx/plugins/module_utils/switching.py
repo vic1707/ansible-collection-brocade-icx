@@ -42,7 +42,7 @@ def parse_interfaces(raw: str) -> dict[str, dict[str, Any]]:
 		state: dict[str, Any] = {
 			"name": name,
 			"description": None,
-			"admin_state": "up",
+			"enabled": True,
 			"speed_duplex": None,
 			"dual_mode": None,
 			"voice_vlan": None,
@@ -52,7 +52,7 @@ def parse_interfaces(raw: str) -> dict[str, dict[str, Any]]:
 			if line.startswith("port-name "):
 				state["description"] = line.removeprefix("port-name ")
 			elif line == "disable":
-				state["admin_state"] = "down"
+				state["enabled"] = False
 			elif line.startswith("speed-duplex "):
 				state["speed_duplex"] = line.removeprefix("speed-duplex ")
 			elif line.startswith("dual-mode"):

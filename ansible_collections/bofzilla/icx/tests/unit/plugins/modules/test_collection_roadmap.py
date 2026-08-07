@@ -392,7 +392,7 @@ interface ethernet 1/1/3
 """,
 		},
 	)
-	data, mocks = run(params={"interfaces": [{"name": "1/1/3", "description": "user-test", "mode": "access", "access_vlan": 20, "admin_state": "up"}]})
+	data, mocks = run(params={"interfaces": [{"name": "1/1/3", "description": "user-test", "mode": "access", "access_vlan": 20, "enabled": True}]})
 	assert data["command"] == [
 		"no untagged ethernet 1/1/3",
 		"untagged ethernet 1/1/3",

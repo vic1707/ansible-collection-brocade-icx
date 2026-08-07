@@ -81,11 +81,11 @@ options:
           - Native/untagged VLAN for C(mode=general), implemented with ICX C(dual-mode).
           - Invalid with C(mode=trunk), because trunks are tagged-only in this module.
         type: int
-      admin_state:
+      enabled:
         description:
-          - Administrative port state.
-        type: str
-        choices: [up, down]
+          - Administrative port state. C(false) disables the port with
+            FastIron C(disable), C(true) re-enables it with C(enable).
+        type: bool
       speed_duplex:
         description:
           - FastIron C(speed-duplex) value, or C(auto) to remove explicit speed-duplex config.
@@ -170,7 +170,7 @@ def _desired(item: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
 	desired = {
 		"name": item["name"],
 		"description": current.get("description"),
-		"admin_state": current.get("admin_state", "up"),
+		"enabled": current.get("enabled", True),
 		"speed_duplex": current.get("speed_duplex"),
 		"voice_vlan": current.get("voice_vlan"),
 		"mode": item.get("mode"),
@@ -179,7 +179,7 @@ def _desired(item: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
 		"allowed_vlans": current.get("tagged_vlans", []),
 		"poe": dict(current.get("poe", {"enabled": None})),
 	}
-	for key in ("description", "admin_state", "speed_duplex", "voice_vlan"):
+	for key in ("description", "enabled", "speed_duplex", "voice_vlan"):
 		if item.get(key) is not None:
 			desired[key] = item[key]
 	if item.get("mode") == "access":
@@ -289,8 +289,8 @@ def _commands(current: dict[str, Any], desired: dict[str, Any], item: dict[str, 
 			cmds.append(ConfigLine(f"no port-name {current['description']}", mode))
 		if desired.get("description"):
 			cmds.append(ConfigLine(f"port-name {desired['description']}", mode))
-	if item.get("admin_state") is not None and current.get("admin_state", "up") != desired.get("admin_state"):
-		cmds.append(ConfigLine("disable" if desired["admin_state"] == "down" else "enable", mode))
+	if item.get("enabled") is not None and current.get("enabled", True) != desired.get("enabled"):
+		cmds.append(ConfigLine("disable" if desired["enabled"] is False else "enable", mode))
 	if item.get("speed_duplex") is not None and current.get("speed_duplex") != desired.get("speed_duplex"):
 		cmds.append(ConfigLine("no speed-duplex" if desired["speed_duplex"] == "auto" else f"speed-duplex {desired['speed_duplex']}", mode))
 	if item.get("voice_vlan") is not None and current.get("voice_vlan") != desired.get("voice_vlan"):
@@ -315,7 +315,7 @@ def main():
 				"options": {
 					"name": {"type": "str", "required": True},
 					"description": {"type": "str"},
-					"admin_state": {"type": "str", "choices": ["up", "down"]},
+					"enabled": {"type": "bool"},
 					"speed_duplex": {"type": "str", "choices": SPEED_DUPLEX_CHOICES},
 					"voice_vlan": {"type": "int"},
 					"mode": {"type": "str", "choices": ["access", "trunk", "general"]},
