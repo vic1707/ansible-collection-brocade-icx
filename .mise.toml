@@ -1,7 +1,7 @@
 redactions = ["ICX_ENABLE_PASSWORD"]
 
 [env]
-_.path = "{{ env.PATH }}:{{ config_root }}/bin"
+_.path = "{{ config_root }}/bin"
 _.python.venv = { path = ".venv", create = true }
 ANSIBLE_INVENTORY = "{{ config_root }}/.config/inventory.yml"
 ANSIBLE_COLLECTIONS_PATH = "{{ config_root }}/ansible_collections"
