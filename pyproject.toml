@@ -1,11 +1,11 @@
 [project]
 name = "ansible-collection-icx"
-requires-python = "==3.14.5"
+requires-python = "==3.14.7"
 version = "0.0.1"
 dependencies = [
-	"ansible==13.7.0",
-	"ansible-lint==26.4.0",
-	"coverage==7.14.1",
+	"ansible==13.8.0",
+	"ansible-lint==26.8.0",
+	"coverage==7.16.0",
 	# paramiko 5.0.0 (2026-05-09) dropped both:
 	#   - SHA-1 DH KEX (diffie-hellman-group1-sha1, needed by ICX)
 	#   - ssh-rsa host key algorithm (also needed by ICX)
@@ -13,11 +13,11 @@ dependencies = [
 	# commit a448945 (Remove SHA1 support from RSA key handling)
 	"paramiko==4.0.0",
 	"pyserial==3.5",
-	"pydantic==2.13.4",
-	"pytest==9.0.3",
+	"pydantic==2.13.5",
+	"pytest==9.1.1",
 	"pytest-xdist==3.8.0",
-	"ruff==0.15.15",
-	"ty==0.0.40",
+	"ruff==0.16.5",
+	"ty==0.0.76",
 ]
 
 [tool.ruff]
