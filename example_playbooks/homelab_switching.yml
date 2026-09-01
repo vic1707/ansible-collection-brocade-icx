@@ -37,15 +37,16 @@
           priority: 2
 
   tasks:
-    - name: Configure VLANs
-      bofzilla.icx.vlans:
-        vlans: "{{ icx_vlans }}"
-        save_when: "{{ icx_save_when }}"
-        enable_password: "{{ icx_enable_password | default(omit) }}"
-
     - name: Configure Ethernet ports
       bofzilla.icx.interfaces:
         interfaces: "{{ icx_interfaces }}"
+        save_when: "{{ icx_save_when }}"
+        enable_password: "{{ icx_enable_password | default(omit) }}"
+
+    # FastIron only instantiates a VE after its VLAN has a member port.
+    - name: Configure VLANs
+      bofzilla.icx.vlans:
+        vlans: "{{ icx_vlans }}"
         save_when: "{{ icx_save_when }}"
         enable_password: "{{ icx_enable_password | default(omit) }}"
 

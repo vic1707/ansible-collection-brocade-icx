@@ -24,6 +24,9 @@ description:
   - Manages VLAN existence, names, VE router-interface attachment and IPv4
     addressing, and the management-vlan flag. Port membership is intentionally
     owned by the interfaces module.
+  - FastIron does not instantiate a VE until its VLAN has a tagged or untagged
+    member port. On factory-reset devices, apply C(bofzilla.icx.interfaces)
+    before this module when configuring C(ip_address).
 options:
   vlans:
     description:
@@ -50,6 +53,7 @@ options:
         description:
           - Static IPv4 address and prefix for the attached VE.
           - Requires C(router_interface).
+          - The VLAN must already have a tagged or untagged member port.
         type: str
       management:
         description:
