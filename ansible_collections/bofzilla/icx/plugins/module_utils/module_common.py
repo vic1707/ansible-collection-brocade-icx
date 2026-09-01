@@ -27,8 +27,7 @@ def should_save(save_when: str, changed: bool) -> bool:
 def run_config_commands(client: Any, module: Any, commands: list[ConfigLine], changed: bool, save_when: str) -> bool:
 	save = should_save(save_when, changed)
 	if changed and not module.check_mode:
-		for cmd in commands:
-			client.run(cmd)
+		client.run_config(commands)
 	if save and not module.check_mode:
 		client.run(WriteMemory())
 	return save

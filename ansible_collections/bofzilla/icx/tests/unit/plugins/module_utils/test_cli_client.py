@@ -4,6 +4,7 @@ from ansible.module_utils.connection import Connection
 
 from ansible_collections.bofzilla.icx.plugins.module_utils.cli_client import CliClient
 from ansible_collections.bofzilla.icx.plugins.module_utils.command_spec import Command, config, enabled
+from ansible_collections.bofzilla.icx.plugins.module_utils.commands.config import ConfigLine
 
 
 @enabled
@@ -69,3 +70,30 @@ def test_config_command_sends_end_after_submode():
 
 	assert result == "ok"
 	assert conn.calls == ["enable:None:False", "configure terminal", "example config", "end"]
+
+
+def test_config_lines_share_one_configuration_session():
+	conn = FakeConnection()
+	CliClient(cast(Connection, conn)).run_config(
+		[
+			ConfigLine("vlan 20 by port"),
+			ConfigLine("port-name uplink", "interface ethernet 1/1/1"),
+			ConfigLine("enable", "interface ethernet 1/1/1"),
+			ConfigLine("tagged ethernet 1/1/1", "vlan 10 by port"),
+		]
+	)
+
+	assert conn.calls == [
+		"enable:None:False",
+		"configure terminal",
+		"vlan 20 by port",
+		"end",
+		"configure terminal",
+		"interface ethernet 1/1/1",
+		"port-name uplink",
+		"enable",
+		"exit",
+		"vlan 10 by port",
+		"tagged ethernet 1/1/1",
+		"end",
+	]

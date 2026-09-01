@@ -177,3 +177,6 @@ class _FakeCliClient:
 				return self.state.get("lldp_neighbors", "")
 			case _:
 				return None
+
+	def run_config(self, commands: list[Any]) -> None:
+		self.commands.extend(commands)
