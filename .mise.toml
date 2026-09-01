@@ -15,8 +15,8 @@ includes = [".config/tasks.mise.toml"]
 actionlint = "1.7.12"
 jq = "1.8.2"
 python = "3.14.7"
-typos = "1.50.0"
-uv = "0.12.8"
+typos = "1.50.1"
+uv = "0.12.9"
 zizmor = "1.30.0"
 
 [plugins]
