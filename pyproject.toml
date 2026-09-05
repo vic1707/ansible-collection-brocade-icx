@@ -16,8 +16,8 @@ dependencies = [
 	"pydantic==2.13.5",
 	"pytest==9.1.1",
 	"pytest-xdist==3.8.0",
-	"ruff==0.16.5",
-	"ty==0.0.77",
+	"ruff==0.16.6",
+	"ty==0.0.78",
 ]
 
 [tool.ruff]
