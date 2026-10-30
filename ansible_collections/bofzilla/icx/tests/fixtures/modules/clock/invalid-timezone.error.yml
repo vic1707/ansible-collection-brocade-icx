@@ -3,6 +3,7 @@ params:
   time: "2026-06-03T14:30:00"
   timezone: "invalid_tz"
 
+# yamllint disable rule:line-length
 error: >-
   ValidationError: 1 validation error for SetClockTimezone
 

@@ -1,5 +1,5 @@
 import traceback
-from ipaddress import ip_address
+from ipaddress import IPv4Address, IPv6Address, ip_address
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.connection import Connection
@@ -111,8 +111,8 @@ enabled:
 """
 
 
-def _configured_servers(raw: str):
-	servers = set()
+def _configured_servers(raw: str) -> frozenset[IPv4Address | IPv6Address]:
+	servers: set[IPv4Address | IPv6Address] = set()
 	for line in clean_lines(raw):
 		if line.startswith("server "):
 			servers.add(ip_address(line.split()[1]))

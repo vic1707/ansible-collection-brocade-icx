@@ -5,7 +5,7 @@ from unittest.mock import Mock, call
 os.environ.setdefault("ANSIBLE_LOCAL_TEMP", "/private/tmp")
 
 from ansible_collections.bofzilla.icx.plugins.cliconf.icx import ENABLE_PASSWORD_PROMPT
-from ansible_collections.bofzilla.icx.plugins.connection.serial import Connection
+from ansible_collections.bofzilla.icx.plugins.connection.serial import CommandText, Connection
 
 
 def test_serial_logout_cancels_prompts_and_ends_session():
@@ -21,8 +21,8 @@ def test_serial_logout_cancels_prompts_and_ends_session():
 def test_serial_answers_optional_enable_prompts_by_position():
 	connection = object.__new__(Connection)
 	connection._serial = Mock()
-	prompts = [r"User Name: ?$", r"Password: ?$"]
-	answers = ["admin", "secret"]
+	prompts: list[CommandText] = [r"User Name: ?$", r"Password: ?$"]
+	answers: list[CommandText] = ["admin", "secret"]
 
 	assert not connection._handle_prompt(b"\r\nUser Name:", prompts, answers, True, False)
 	assert connection._handle_prompt(b"\r\nPassword:", prompts, answers, True, False)

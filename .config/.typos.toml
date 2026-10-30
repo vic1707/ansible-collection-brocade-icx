@@ -1,4 +1,12 @@
+[files]
+# Keep the vendor command reference verbatim.
+extend-exclude = ["FASTIRON_08030_COMMAND_REFERENCE.md"]
+
 [default]
 extend-ignore-re = [
 	"(?m)^\\s*(#|//) @typos-ignore$\n.*",
+	"\\[Uu\\]ser",
 ]
+
+[default.extend-words]
+ethe = "ethe" # FastIron's abbreviated ethernet keyword
