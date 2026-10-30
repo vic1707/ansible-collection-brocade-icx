@@ -4,6 +4,6 @@
 __pycache__/
 .ruff_cache/
 
-ansible_collections/bofzilla/icx/tests/output/
-ansible_collections/bofzilla/icx/tests/integration/inventory
-ansible_collections/bofzilla/icx/tests/integration/integration_config.yml
+ansible_collections/vic1707/icx/tests/output/
+ansible_collections/vic1707/icx/tests/integration/inventory
+ansible_collections/vic1707/icx/tests/integration/integration_config.yml

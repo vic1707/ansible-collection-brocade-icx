@@ -5,7 +5,7 @@
 
   tasks:
     - name: Set clock
-      bofzilla.icx.clock:
+      vic1707.icx.clock:
         # time: # omitted so <now>
         # timezone: # omitted so host's current timezone
         summer_time: false

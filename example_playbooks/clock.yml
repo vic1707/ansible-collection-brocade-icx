@@ -5,7 +5,7 @@
 
   tasks:
     - name: Retrieve clock
-      bofzilla.icx.show.clock:
+      vic1707.icx.show.clock:
       register: clock
 
     - name: Show parsed clock

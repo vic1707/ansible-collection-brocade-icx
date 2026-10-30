@@ -1,0 +1,18 @@
+---
+namespace: vic1707
+name: icx
+version: 1.0.0
+readme: README.md
+authors:
+  - vic1707
+description: An unofficial collection for Brocade ICX switches
+license:
+  - GPL-2.0-or-later
+tags: [brocade, icx, networking, switch]
+dependencies:
+  ansible.netcommon: ">=8.0.0"
+repository: https://github.com/vic1707/ansible-collection-brocade-icx
+documentation: https://github.com/vic1707/ansible-collection-brocade-icx/blob/main/ansible_collections/vic1707/icx/README.md
+homepage: https://github.com/vic1707/ansible-collection-brocade-icx
+issues: https://github.com/vic1707/ansible-collection-brocade-icx/issues
+build_ignore: [tests, __pycache__]

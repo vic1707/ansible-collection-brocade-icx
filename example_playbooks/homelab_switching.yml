@@ -38,20 +38,20 @@
 
   tasks:
     - name: Configure Ethernet ports
-      bofzilla.icx.interfaces:
+      vic1707.icx.interfaces:
         interfaces: "{{ icx_interfaces }}"
         save_when: "{{ icx_save_when }}"
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     # FastIron only instantiates a VE after its VLAN has a member port.
     - name: Configure VLANs
-      bofzilla.icx.vlans:
+      vic1707.icx.vlans:
         vlans: "{{ icx_vlans }}"
         save_when: "{{ icx_save_when }}"
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Enable LLDP
-      bofzilla.icx.lldp:
+      vic1707.icx.lldp:
         enabled: true
         tagged_packets: true
         transmit_interval: 40

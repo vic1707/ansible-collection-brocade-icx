@@ -9,7 +9,7 @@
 
   tasks:
     - name: Configure management access
-      bofzilla.icx.management_access:
+      vic1707.icx.management_access:
         ssh:
           enabled: true
           password_authentication: true
@@ -28,7 +28,7 @@
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Configure syslog
-      bofzilla.icx.logging:
+      vic1707.icx.logging:
         enabled: true
         hosts:
           - address: "{{ icx_syslog_host }}"
@@ -37,7 +37,7 @@
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Configure simple SNMP
-      bofzilla.icx.snmp:
+      vic1707.icx.snmp:
         communities:
           - name: "{{ icx_snmp_community }}"
             access: ro

@@ -8,7 +8,7 @@
 
   tasks:
     - name: Gather facts
-      bofzilla.icx.facts:
+      vic1707.icx.facts:
         include_chassis: true
         include_lldp: true
         enable_password: "{{ icx_enable_password | default(omit) }}"
@@ -19,7 +19,7 @@
         var: icx_facts.ansible_facts.icx.device
 
     - name: Upload running-config over TFTP
-      bofzilla.icx.backup:
+      vic1707.icx.backup:
         source: running-config
         protocol: tftp
         server: "{{ icx_backup_server }}"

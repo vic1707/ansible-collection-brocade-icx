@@ -1,0 +1,18 @@
+---
+requires_ansible: ">=2.16.0"
+action_groups:
+  all:
+    - auth
+    - backup
+    - clock
+    - facts
+    - interfaces
+    - lags
+    - lldp
+    - logging
+    - management_access
+    - management_oob
+    - ntp
+    - snmp
+    - system
+    - vlans

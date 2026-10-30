@@ -18,7 +18,7 @@
 
   tasks:
     - name: Configure system basics
-      bofzilla.icx.system:
+      vic1707.icx.system:
         hostname: "{{ icx_hostname }}"
         dns_servers: "{{ icx_dns_servers }}"
         dns_domains: "{{ icx_dns_domains }}"
@@ -29,7 +29,7 @@
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Configure local authentication
-      bofzilla.icx.auth:
+      vic1707.icx.auth:
         users:
           - name: "{{ icx_admin_user }}"
             privilege: 0
@@ -45,7 +45,7 @@
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Configure OOB management addressing
-      bofzilla.icx.management_oob:
+      vic1707.icx.management_oob:
         mode: "{{ icx_oob_management_mode }}"
         ip_address: "{{ icx_oob_management_ip | default(omit, true) }}"
         default_gateway: "{{ icx_oob_management_gateway | default(omit, true) }}"
@@ -53,7 +53,7 @@
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Enable safe management access
-      bofzilla.icx.management_access:
+      vic1707.icx.management_access:
         ssh:
           enabled: true
           password_authentication: true
@@ -73,7 +73,7 @@
         enable_password: "{{ icx_enable_password | default(omit) }}"
 
     - name: Configure NTP
-      bofzilla.icx.ntp:
+      vic1707.icx.ntp:
         servers:
           - 134.59.1.5
         enabled: true

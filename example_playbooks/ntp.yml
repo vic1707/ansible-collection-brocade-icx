@@ -5,7 +5,7 @@
 
   tasks:
     - name: Add NTP server
-      bofzilla.icx.ntp:
+      vic1707.icx.ntp:
         servers:
           - 134.59.1.5
         enabled: true

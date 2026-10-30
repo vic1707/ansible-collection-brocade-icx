@@ -11,7 +11,7 @@ zizmor = "zizmor ."
 
 clean = """
 rm -fr .ruff_cache .ansible .pytest_cache
-find ansible_collections/bofzilla/icx \
+find ansible_collections/vic1707/icx \
 	-type d -name '__pycache__' -o -path '*/tests/output' \
 	| xargs rm -rf
 """
@@ -33,7 +33,7 @@ depends = ["ansible-lint:fix", "ty", "ruff:lint:fix"]
 
 [unit-tests]
 depends = ["clean"]
-dir = "{{ config_root }}/ansible_collections/bofzilla/icx"
+dir = "{{ config_root }}/ansible_collections/vic1707/icx"
 run = "ansible-test units --coverage --python-interpreter $(which python)"
 
 [tests]
@@ -41,5 +41,5 @@ depends = ["unit-tests"]
 
 [tests-coverage]
 depends = ["tests"]
-dir = "{{ config_root }}/ansible_collections/bofzilla/icx"
+dir = "{{ config_root }}/ansible_collections/vic1707/icx"
 run = "ansible-test coverage html"
