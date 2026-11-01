@@ -19,7 +19,7 @@ typos = "1.50.1"
 uv = "0.12.9"
 zizmor = "1.30.0"
 
-[plugins]
+[tool_alias]
 zizmor = "asdf:vic1707/asdf-zizmor"
 
 [hooks]
