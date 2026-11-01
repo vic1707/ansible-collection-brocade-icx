@@ -4,7 +4,6 @@ strict: true
 
 enable_list:
   - empty-string-compare
-  - galaxy-version-incorrect
   - loop-var-prefix
   - name[prefix]
   - no-log-password

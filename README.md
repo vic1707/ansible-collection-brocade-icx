@@ -11,13 +11,13 @@ Set `GALAXY_API_KEY` in repository secrets. Update the collection's `galaxy.yml`
 version and `CHANGELOG.md`, then tag the commit to publish and push:
 
 ```sh
-git tag -a v1.0.0 -m "Release 1.0.0"
-git push origin v1.0.0
+git tag -a v0.1.0 -m "Release 0.1.0"
+git push origin v0.1.0
 ```
 
 CI runs tests and lint, builds the collection and publishes it to Galaxy.
 No GitHub Release is required. Update module docs alongside code changes.
 
-Prerelease tags such as `v1.0.0-experimental.1` work too; set `galaxy.yml` version
-to `1.0.0-experimental.1`. Install explicitly with
-`ansible-galaxy collection install vic1707.icx:==1.0.0-experimental.1`.
+Prerelease tags such as `v0.1.1-experimental.1` work too; set `galaxy.yml` version
+to `0.1.1-experimental.1`. Install explicitly with
+`ansible-galaxy collection install vic1707.icx:==0.1.1-experimental.1`.
