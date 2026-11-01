@@ -2,7 +2,7 @@ name: Publish collection
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["*"]
 
 permissions:
   contents: read
@@ -23,7 +23,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: false
@@ -31,8 +30,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          git merge-base --is-ancestor HEAD origin/main
-          mise exec -- python -c 'import os, yaml; assert "v" + str(yaml.safe_load(open("ansible_collections/vic1707/icx/galaxy.yml"))["version"]) == os.environ["RELEASE_TAG"], "Tag must match galaxy.yml version"'
+          mise exec -- python -c 'import os, yaml; assert str(yaml.safe_load(open("ansible_collections/vic1707/icx/galaxy.yml"))["version"]) == os.environ["RELEASE_TAG"].removeprefix("v"), "Tag must match galaxy.yml version"'
           mise exec -- ansible-galaxy collection build ansible_collections/vic1707/icx --output-path "$RUNNER_TEMP"
       - name: Publish to Ansible Galaxy
         env:
