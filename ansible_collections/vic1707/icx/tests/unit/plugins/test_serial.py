@@ -1,8 +1,9 @@
 import os
 import re
+import tempfile
 from unittest.mock import Mock, call
 
-os.environ.setdefault("ANSIBLE_LOCAL_TEMP", "/private/tmp")
+os.environ.setdefault("ANSIBLE_LOCAL_TEMP", tempfile.gettempdir())
 
 from ansible_collections.vic1707.icx.plugins.cliconf.icx import ENABLE_PASSWORD_PROMPT
 from ansible_collections.vic1707.icx.plugins.connection.serial import CommandText, Connection

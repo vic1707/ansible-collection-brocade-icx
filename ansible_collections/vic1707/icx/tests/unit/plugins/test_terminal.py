@@ -1,6 +1,7 @@
 import os
+import tempfile
 
-os.environ.setdefault("ANSIBLE_LOCAL_TEMP", "/private/tmp")
+os.environ.setdefault("ANSIBLE_LOCAL_TEMP", tempfile.gettempdir())
 
 from ansible_collections.vic1707.icx.plugins.terminal.icx import TerminalModule
 
